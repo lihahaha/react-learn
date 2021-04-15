@@ -1,8 +1,9 @@
 import {React, Component} from "../CONST";
 
-class ClassComponent extends Component {
+class classComponent extends Component {
   render() {
-    return <div className="class border">{this.props.name}</div>;
+    return <div>
+    <div className="class border">{this.props.name}</div></div>;
   }
 }
 
@@ -15,12 +16,13 @@ function FunctionComponent({name}) {
   );
 }
 
-const jsx = (
-  <div className="box border">
+class ParentComponent extends Component {
+  render() {
+    return <div><div className="box border">
     <p>开课吧</p>
-    <a href="https://kaikeba.com/">开课吧</a>
+    {/* <a href="https://kaikeba.com/">开课吧</a>
     <FunctionComponent name="函数组件" />
-    <ClassComponent name="class组件" />
+    <classComponent name="class组件" /> */}
 
     {/* <>
       <h1>文本1</h1>
@@ -34,7 +36,8 @@ const jsx = (
     //   //   <h2>文本2</h2>
     //   // </React.Fragment>
     // ))} */}
-  </div>
-);
+  </div></div>;
+  }
+}
 
-export default jsx;
+export default ParentComponent;
