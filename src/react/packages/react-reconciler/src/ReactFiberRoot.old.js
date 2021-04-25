@@ -24,9 +24,9 @@ import {initializeUpdateQueue} from './ReactUpdateQueue.old';
 import {clearPendingUpdates as clearPendingMutableSourceUpdates} from './ReactMutableSource.old';
 
 function FiberRootNode(containerInfo, tag, hydrate) {
-  this.tag = tag;
-  this.current = null;
-  this.containerInfo = containerInfo;
+  this.tag = tag; // FiberRoot的标识，0
+  this.current = null; // 指向FiberRoot
+  this.containerInfo = containerInfo; // ReactDom.render第二个参数
   this.pendingChildren = null;
   this.pingCache = null;
   this.finishedExpirationTime = NoWork;
