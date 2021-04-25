@@ -237,6 +237,7 @@ export function createContainer(
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): OpaqueRoot {
+  console.log('%ccreateContainer', 'font-size:14px;color:green;');
   return createFiberRoot(containerInfo, tag, hydrate, hydrationCallbacks);
 }
 

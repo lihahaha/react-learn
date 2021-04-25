@@ -62,6 +62,7 @@ export function createFiberRoot(
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): FiberRoot {
+  console.log('%ccreateFiberRoot', 'font-size:14px;color:green;');
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
@@ -74,7 +75,8 @@ export function createFiberRoot(
   uninitializedFiber.stateNode = root;
 
   initializeUpdateQueue(uninitializedFiber);
-
+  
+  console.log('%ccreateFiberRoot', 'font-size:14px;color:pink;', root);
   return root;
 }
 

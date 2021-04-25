@@ -46,7 +46,6 @@ function getReactRootElementInContainer(container: any) {
   if (!container) {
     return null;
   }
-    console.log(container.nodeType, container.firstChild);
   if (container.nodeType === DOCUMENT_NODE) {
     return container.documentElement;
   } else {
@@ -57,8 +56,6 @@ function getReactRootElementInContainer(container: any) {
 function shouldHydrateDueToLegacyHeuristic(container) {
   
   const rootElement = getReactRootElementInContainer(container);
-  console.log('%cshouldHydrateDueToLegacyHeuristic', 'font-size:14px;color:green;');
-  console.log(container, rootElement); // 
   return !!(
     rootElement &&
     rootElement.nodeType === ELEMENT_NODE &&
@@ -70,7 +67,7 @@ function legacyCreateRootFromDOMContainer(
   container: Container,
   forceHydrate: boolean, // false, hydrate传过来是true，是否需要调和子节点，服务端服用节点，节省性能
 ): RootType {
-  
+  console.log('%clegacyCreateRootFromDOMContainer', 'font-size:14px;color:green;');
   const shouldHydrate =
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container); // false
   // First clear any existing content.
@@ -83,8 +80,9 @@ function legacyCreateRootFromDOMContainer(
       container.removeChild(rootSibling);
     }
   }
+
   // 创建ReactRoot
-  return createLegacyRoot(
+  const a =  createLegacyRoot(
     container,
     shouldHydrate
       ? {
@@ -92,6 +90,8 @@ function legacyCreateRootFromDOMContainer(
         }
       : undefined,
   );
+  console.log('%clegacyCreateRootFromDOMContainer', 'font-size:14px;color:pink;', a);
+  return a;
 }
 
 function legacyRenderSubtreeIntoContainer(
@@ -101,6 +101,7 @@ function legacyRenderSubtreeIntoContainer(
   forceHydrate: boolean,
   callback: ?Function,
 ) {
+  console.log('%clegacyRenderSubtreeIntoContainer', 'font-size:14px;color:green;');
   // _reactRootContainer就是FiberRoot对象，第一次这里是undefined，所以root进入!root
   let root: RootType = (container._reactRootContainer: any);
   let fiberRoot;
@@ -110,8 +111,7 @@ function legacyRenderSubtreeIntoContainer(
       container,
       forceHydrate,
     );
-    console.log('%clegacyRenderSubtreeIntoContainer', 'font-size:14px;color:green;');
-    console.log(root);
+    console.log('%clegacyRenderSubtreeIntoContainer', 'font-size:14px;color:pink;', root);
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;
