@@ -126,7 +126,7 @@ export type Update<State> = {|
 type SharedQueue<State> = {|pending: Update<State> | null|};
 
 export type UpdateQueue<State> = {|
-  baseState: State,
+  baseState: State, // 每次操作完更新之后的`state`，下次更新的时候以此为基础进行计算
   firstBaseUpdate: Update<State> | null,
   lastBaseUpdate: Update<State> | null,
   shared: SharedQueue<State>,
@@ -191,18 +191,19 @@ export function createUpdate(
   suspenseConfig: null | SuspenseConfig,
 ): Update<*> {
   const update: Update<*> = {
-    expirationTime,
+    expirationTime, // 更新过期时间
     suspenseConfig,
 
-    tag: UpdateState,
-    payload: null,
-    callback: null,
+    tag: UpdateState, // 4种类型，
+    // export const UpdateState = 0; 更新state
+    // export const ReplaceState = 1; 替换state
+    // export const ForceUpdate = 2; 强制更新state
+    // export const CaptureUpdate = 3; 更新错误时捕获
+    payload: null, // 实际执行的操作内容，
+    callback: null, // 对应回调，蔽日setstate或者render的回调
 
-    next: null,
+    next: null, // 下一个update
   };
-  if (__DEV__) {
-    update.priority = getCurrentPriorityLevel();
-  }
   return update;
 }
 
@@ -223,21 +224,6 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     pending.next = update;
   }
   sharedQueue.pending = update;
-
-  if (__DEV__) {
-    if (
-      currentlyProcessingQueue === sharedQueue &&
-      !didWarnUpdateInsideUpdate
-    ) {
-      console.error(
-        'An update (setState, replaceState, or forceUpdate) was scheduled ' +
-          'from inside an update function. Update functions should be pure, ' +
-          'with zero side-effects. Consider using componentDidUpdate or a ' +
-          'callback.',
-      );
-      didWarnUpdateInsideUpdate = true;
-    }
-  }
 }
 
 export function enqueueCapturedUpdate<State>(

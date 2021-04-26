@@ -247,70 +247,21 @@ export function updateContainer(
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): ExpirationTime {
-  if (__DEV__) {
-    onScheduleRoot(container, element);
-  }
-  const current = container.current;
-  const currentTime = requestCurrentTimeForUpdate();
-  if (__DEV__) {
-    // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
-    if ('undefined' !== typeof jest) {
-      warnIfUnmockedScheduler(current);
-      warnIfNotScopedWithMatchingAct(current);
-    }
-  }
+  // 这里在初次渲染时 element是children container是root parentComponent是null
+  const current = container.current; // current就是RootFiber
+  const currentTime = requestCurrentTimeForUpdate(); // 这里得到的是到目前为止 react还能处理多少单位时间(1单位时间是10ms)
   const suspenseConfig = requestCurrentSuspenseConfig();
   const expirationTime = computeExpirationForFiber(
     currentTime,
     current,
     suspenseConfig,
-  );
+  ); // 计算出expirationTime
 
-  const context = getContextForSubtree(parentComponent);
-  if (container.context === null) {
-    container.context = context;
-  } else {
-    container.pendingContext = context;
-  }
-
-  if (__DEV__) {
-    if (
-      ReactCurrentFiberIsRendering &&
-      ReactCurrentFiberCurrent !== null &&
-      !didWarnAboutNestedUpdates
-    ) {
-      didWarnAboutNestedUpdates = true;
-      console.error(
-        'Render methods should be a pure function of props and state; ' +
-          'triggering nested component updates from render is not allowed. ' +
-          'If necessary, trigger nested updates in componentDidUpdate.\n\n' +
-          'Check the render method of %s.',
-        getComponentName(ReactCurrentFiberCurrent.type) || 'Unknown',
-      );
-    }
-  }
-
-  const update = createUpdate(expirationTime, suspenseConfig);
-  // Caution: React DevTools currently depends on this property
-  // being called "element".
+  const update = createUpdate(expirationTime, suspenseConfig); // update是react中用来标记应用要更新的地点
   update.payload = {element};
 
-  callback = callback === undefined ? null : callback;
-  if (callback !== null) {
-    if (__DEV__) {
-      if (typeof callback !== 'function') {
-        console.error(
-          'render(...): Expected the last optional `callback` argument to be a ' +
-            'function. Instead received: %s.',
-          callback,
-        );
-      }
-    }
-    update.callback = callback;
-  }
-
-  enqueueUpdate(current, update);
-  scheduleUpdateOnFiber(current, expirationTime);
+  enqueueUpdate(current, update); // 把update对象加到Fiber对象上对应的updateQueue，一个整体的react应用更新过程中，会有很多次更新在一个节点上
+  scheduleUpdateOnFiber(current, expirationTime); // 开始进行任务调度，因为有任务优先级的概念，同一时间可能有很多任务在里面，通过这里进行不同优先级调用
 
   return expirationTime;
 }

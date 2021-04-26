@@ -115,39 +115,41 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
-  this.tag = tag;
-  this.key = key;
-  this.elementType = null;
-  this.type = null;
-  this.stateNode = null;
+  this.tag = tag; // 标记不同组件类型，如classComponent表示class类组件 functionComponent表示函数类型组件 还有其他类型的在 ReactWorkTag.js 文件红可以看到，具体类型直接全局搜索WorkTag，有个Map映射关系
+  this.key = key; // react元素上的key 就是jsx上写的那个key
+  this.elementType = null; // 表示fiber的真实类型 比如当前fiber对应的jsx是div 那这个属性就是 'div' 如果这个属性对应一个叫做 Test 的class类 那么这个属性就是 Test 本身
+  this.type = null; // 表示fiber的真实类型 这个和elementType大部分情况下是一样的 在使用了懒加载之类的功能时可能会不一样
+  this.stateNode = null; // 当前Fiber对应的实例 比如class组件 new完之后就挂在这个属性上
 
   // Fiber
-  this.return = null;
-  this.child = null;
-  this.sibling = null;
-  this.index = 0;
+  this.return = null; // 用来指向当前fiber的父fiber
+  this.child = null; // 子级Fiber 指向自己的第一个子Fiber节点 也就是firstChildFiber
+  this.sibling = null; // 兄弟节点 指向右边的兄弟节点,在react中采用的是树和链表数据结构，每个节点有且仅有一个child指向firstchild，sibling同理
+  this.index = 0; // 一般如果没有兄弟节点的话是0 当某个父节点下的子节点是数组类型的时候会给每个子节点一个index index和key要一起做diff
 
-  this.ref = null;
+  this.ref = null; // 这个就是react元素上也就是jsx上写的ref
 
-  this.pendingProps = pendingProps;
-  this.memoizedProps = null;
-  this.updateQueue = null;
-  this.memoizedState = null;
+  this.pendingProps = pendingProps; // 新传进来的props
+  this.memoizedProps = null; // 上次渲染完后的旧的props
+  this.updateQueue = null; // 该fiber上的更新队列 执行一次setState就会往这个属性上挂一个新的更新 这些更新以链表的形式存在
+  this.memoizedState = null; // 旧的state 也表示当前页面上的你能看到的状态 不只是class组件有 function类型组件也可能有
   this.dependencies_old = null;
 
   this.mode = mode;
 
   // Effects
-  this.effectTag = NoEffect;
-  this.nextEffect = null;
+  this.effectTag = NoEffect; // 表示当前fiber要进行何种更新 ReactSideEffectTag.js 文件中可以看到全部更新类型 比如placement表示是新创建的节点 update表示属性可能有变化或者有生命周期之类，没有更新就是NoEffect
+  this.nextEffect = null; // 一条链表 指向下一个有更新的fiber
 
-  this.firstEffect = null;
-  this.lastEffect = null;
+  this.firstEffect = null; // 子节点中所有有更新的节点中的第一个fiber
+  this.lastEffect = null; // 子节点中所有有更新的节点中的最后一个fiber
 
-  this.expirationTime = NoWork;
-  this.childExpirationTime = NoWork;
+  this.expirationTime = NoWork; // 当前fiber的优先级 也可以说是过期时间，同步状态下用不到，也就是说如果不给组件包裹concurrent组件的话 几乎没太大用
+  this.childExpirationTime = NoWork; // 当前节点的所有子节点中的那个最大的优先级
 
-  this.alternate = null;
+  this.alternate = null; // 指向当前fiber的上一个状态
+
+  // 文本类型节点比较特殊，如果文本类型没有兄弟节点，不生成fiber，或者说fiber是null，其他类型的节点不管是class还是function都会生成对应的fiber
 
   if (enableProfilerTimer) {
     // Note: The following is done to avoid a v8 performance cliff.
@@ -174,18 +176,6 @@ function FiberNode(
     this.actualStartTime = -1;
     this.selfBaseDuration = 0;
     this.treeBaseDuration = 0;
-  }
-
-  if (__DEV__) {
-    // This isn't directly used but is handy for debugging internals:
-    this._debugID = debugCounter++;
-    this._debugSource = null;
-    this._debugOwner = null;
-    this._debugNeedsRemount = false;
-    this._debugHookTypes = null;
-    if (!hasBadMapPolyfill && typeof Object.preventExtensions === 'function') {
-      Object.preventExtensions(this);
-    }
   }
 }
 

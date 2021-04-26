@@ -120,7 +120,7 @@ function legacyRenderSubtreeIntoContainer(
         originalCallback.call(instance);
       };
     }
-    // 这里只是改变了全局变量，告诉react不批量更新，批量更新会在同时执行多个异步的时候用到，比如settimeout
+    // unbatchedUpdates这里只是改变了全局变量，告诉react不批量更新，批量更新会在同时执行多个异步的时候用到，比如settimeout
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
