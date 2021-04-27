@@ -58,7 +58,9 @@ function ReactDOMBlockingRoot(
   tag: RootTag,
   options: void | RootOptions,
 ) {
+  console.log('%cReactDOMBlockingRoot', 'font-size:14px;color:green;');
   this._internalRoot = createRootImpl(container, tag, options);
+  console.log('%cReactDOMBlockingRoot', 'font-size:14px;color:pink;', this._internalRoot);
 }
 
 ReactDOMRoot.prototype.render = ReactDOMBlockingRoot.prototype.render = function(
@@ -112,6 +114,7 @@ function createRootImpl(
   tag: RootTag,
   options: void | RootOptions,
 ) {
+  console.log('%ccreateRootImpl', 'font-size:14px;color:green;');
   // Tag is either LegacyRoot or Concurrent Root
   const hydrate = options != null && options.hydrate === true;
   const hydrationCallbacks =
@@ -125,6 +128,7 @@ function createRootImpl(
         : container.ownerDocument;
     eagerlyTrapReplayableEvents(container, doc);
   }
+  console.log('%ccreateRootImpl', 'font-size:14px;color:pink;', root);
   return root;
 }
 
@@ -156,7 +160,10 @@ export function createLegacyRoot(
   container: Container,
   options?: RootOptions,
 ): RootType {
-  return new ReactDOMBlockingRoot(container, LegacyRoot, options);
+  console.log('%ccreatLegacyRoot', 'color:green;');
+  const a =  new ReactDOMBlockingRoot(container, LegacyRoot, options);
+  console.log('%ccreatLegacyRoot', 'color:pink;', a);
+  return a;
 }
 
 export function isValidContainer(node: mixed): boolean {

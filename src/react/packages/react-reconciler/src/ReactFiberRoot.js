@@ -104,17 +104,17 @@ export type FiberRoot = {
 };
 
 function FiberRootNode(containerInfo, tag, hydrate) {
-  this.tag = tag;
-  this.current = null;
-  this.containerInfo = containerInfo;
+  this.tag = tag; // FiberRoot的标识，0
+  this.current = null; // 指向RootFiber
+  this.containerInfo = containerInfo; // ReactDom.render第二个参数
   this.pendingChildren = null;
   this.pingCache = null;
   this.finishedExpirationTime = NoWork;
-  this.finishedWork = null;
+  this.finishedWork = null;  // 最终会生成的fiber树，也就是最终的workInProgress树
   this.timeoutHandle = noTimeout;
   this.context = null;
   this.pendingContext = null;
-  this.hydrate = hydrate;
+  this.hydrate = hydrate;  // ssr相关
   this.callbackNode = null;
   this.callbackPriority = NoPriority;
   this.firstPendingTime = NoWork;
@@ -140,6 +140,7 @@ export function createFiberRoot(
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): FiberRoot {
+  console.log('%ccreateFiberRoot', 'font-size:14px;color:green;');
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
@@ -152,7 +153,7 @@ export function createFiberRoot(
   uninitializedFiber.stateNode = root;
 
   initializeUpdateQueue(uninitializedFiber);
-
+  console.log('%ccreateFiberRoot', 'font-size:14px;color:pink;', root);
   return root;
 }
 
