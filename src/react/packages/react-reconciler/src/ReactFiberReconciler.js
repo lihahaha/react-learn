@@ -242,13 +242,6 @@ export function updateContainer(
     suspenseConfig,
   );
 
-  const context = getContextForSubtree(parentComponent);
-  if (container.context === null) {
-    container.context = context;
-  } else {
-    container.pendingContext = context;
-  }
-
   const update = createUpdate(expirationTime, suspenseConfig); // update是react中用来标记应用要更新的地点
   // Caution: React DevTools currently depends on this property
   // being called "element".
