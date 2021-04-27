@@ -9,8 +9,8 @@
 
 'use strict';
 
-const {HostComponent} = require('react-reconciler/src/ReactWorkTags');
-const {PLUGIN_EVENT_SYSTEM} = require('react-dom/src/events/EventSystemFlags');
+const {HostComponent} = require('shared/ReactWorkTags');
+const {PLUGIN_EVENT_SYSTEM} = require('legacy-events/EventSystemFlags');
 
 let EventBatching;
 let EventPluginUtils;
@@ -404,10 +404,11 @@ describe('ResponderEventPlugin', () => {
   beforeEach(() => {
     jest.resetModules();
 
+    const ReactDOMUnstableNativeDependencies = require('react-dom/unstable-native-dependencies');
     EventBatching = require('legacy-events/EventBatching');
     EventPluginUtils = require('legacy-events/EventPluginUtils');
-    ResponderEventPlugin = require('legacy-events/ResponderEventPlugin')
-      .default;
+    ResponderEventPlugin =
+      ReactDOMUnstableNativeDependencies.ResponderEventPlugin;
 
     deleteAllListeners(GRANDPARENT_INST);
     deleteAllListeners(PARENT_INST);
@@ -1377,8 +1378,7 @@ describe('ResponderEventPlugin', () => {
     // ResponderEventPlugin uses `getLowestCommonAncestor`
     const React = require('react');
     const ReactTestUtils = require('react-dom/test-utils');
-    const getLowestCommonAncestor = require('legacy-events/ResponderEventPlugin')
-      .getLowestCommonAncestor;
+    const ReactTreeTraversal = require('shared/ReactTreeTraversal');
     const ReactDOMComponentTree = require('../../react-dom/src/client/ReactDOMComponentTree');
 
     class ChildComponent extends React.Component {
@@ -1451,7 +1451,7 @@ describe('ResponderEventPlugin', () => {
     let i;
     for (i = 0; i < ancestors.length; i++) {
       const plan = ancestors[i];
-      const firstCommon = getLowestCommonAncestor(
+      const firstCommon = ReactTreeTraversal.getLowestCommonAncestor(
         ReactDOMComponentTree.getInstanceFromNode(plan.one),
         ReactDOMComponentTree.getInstanceFromNode(plan.two),
       );

@@ -25,29 +25,6 @@ describe('ReactUpdates', () => {
     Scheduler = require('scheduler');
   });
 
-  // TODO: Delete this once new API exists in both forks
-  function LegacyHiddenDiv({hidden, children, ...props}) {
-    if (gate(flags => flags.new)) {
-      return (
-        <div
-          hidden={hidden ? 'unstable-do-not-use-legacy-hidden' : false}
-          {...props}>
-          <React.unstable_LegacyHidden mode={hidden ? 'hidden' : 'visible'}>
-            {children}
-          </React.unstable_LegacyHidden>
-        </div>
-      );
-    } else {
-      return (
-        <div
-          hidden={hidden ? 'unstable-do-not-use-legacy-hidden' : false}
-          {...props}>
-          {children}
-        </div>
-      );
-    }
-  }
-
   it('should batch state when updating state twice', () => {
     let updateCount = 0;
 
@@ -549,6 +526,7 @@ describe('ReactUpdates', () => {
 
     const bContainer = document.createElement('div');
 
+    let a;
     let b;
 
     let aUpdated = false;
@@ -582,7 +560,7 @@ describe('ReactUpdates', () => {
       }
     }
 
-    const a = ReactTestUtils.renderIntoDocument(<A />);
+    a = ReactTestUtils.renderIntoDocument(<A />);
     ReactDOM.unstable_batchedUpdates(function() {
       a.setState({x: 1});
       b.setState({x: 1});
@@ -755,8 +733,11 @@ describe('ReactUpdates', () => {
       }
     }
 
-    const x = ReactTestUtils.renderIntoDocument(<X />);
-    const y = ReactTestUtils.renderIntoDocument(<Y />);
+    let x;
+    let y;
+
+    x = ReactTestUtils.renderIntoDocument(<X />);
+    y = ReactTestUtils.renderIntoDocument(<Y />);
     expect(ReactDOM.findDOMNode(x).textContent).toBe('0');
 
     y.forceUpdate();
@@ -1121,7 +1102,7 @@ describe('ReactUpdates', () => {
     'in legacy mode, updates in componentWillUpdate and componentDidUpdate ' +
       'should both flush in the immediately subsequent commit',
     () => {
-      const ops = [];
+      let ops = [];
       class Foo extends React.Component {
         state = {a: false, b: false};
         UNSAFE_componentWillUpdate(_, nextState) {
@@ -1164,7 +1145,7 @@ describe('ReactUpdates', () => {
     'in legacy mode, updates in componentWillUpdate and componentDidUpdate ' +
       '(on a sibling) should both flush in the immediately subsequent commit',
     () => {
-      const ops = [];
+      let ops = [];
       class Foo extends React.Component {
         state = {a: false};
         UNSAFE_componentWillUpdate(_, nextState) {
@@ -1232,7 +1213,7 @@ describe('ReactUpdates', () => {
   );
 
   it('uses correct base state for setState inside render phase', () => {
-    const ops = [];
+    let ops = [];
 
     class Foo extends React.Component {
       state = {step: 0};
@@ -1255,7 +1236,7 @@ describe('ReactUpdates', () => {
   });
 
   it('does not re-render if state update is null', () => {
-    const container = document.createElement('div');
+    let container = document.createElement('div');
 
     let instance;
     let ops = [];
@@ -1310,63 +1291,85 @@ describe('ReactUpdates', () => {
     expect(ops).toEqual(['Foo', 'Bar', 'Baz']);
   });
 
-  // @gate experimental
-  // @gate enableLegacyHiddenType
-  it('delays sync updates inside hidden subtrees in Concurrent Mode', () => {
-    const container = document.createElement('div');
+  it.experimental(
+    'delays sync updates inside hidden subtrees in Concurrent Mode',
+    () => {
+      const container = document.createElement('div');
 
-    function Baz() {
-      Scheduler.unstable_yieldValue('Baz');
-      return <p>baz</p>;
-    }
+      function Baz() {
+        Scheduler.unstable_yieldValue('Baz');
+        return <p>baz</p>;
+      }
 
-    let setCounter;
-    function Bar() {
-      const [counter, _setCounter] = React.useState(0);
-      setCounter = _setCounter;
-      Scheduler.unstable_yieldValue('Bar');
-      return <p>bar {counter}</p>;
-    }
+      let setCounter;
+      function Bar() {
+        const [counter, _setCounter] = React.useState(0);
+        setCounter = _setCounter;
+        Scheduler.unstable_yieldValue('Bar');
+        return <p>bar {counter}</p>;
+      }
 
-    function Foo() {
-      Scheduler.unstable_yieldValue('Foo');
-      React.useEffect(() => {
-        Scheduler.unstable_yieldValue('Foo#effect');
+      function Foo() {
+        Scheduler.unstable_yieldValue('Foo');
+        React.useEffect(() => {
+          Scheduler.unstable_yieldValue('Foo#effect');
+        });
+        return (
+          <div>
+            <div hidden={true}>
+              <Bar />
+            </div>
+            <Baz />
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(container);
+      let hiddenDiv;
+      act(() => {
+        root.render(<Foo />);
+        if (__DEV__) {
+          expect(Scheduler).toFlushAndYieldThrough([
+            'Foo',
+            'Foo',
+            'Baz',
+            'Foo#effect',
+          ]);
+        } else {
+          expect(Scheduler).toFlushAndYieldThrough([
+            'Foo',
+            'Baz',
+            'Foo#effect',
+          ]);
+        }
+        hiddenDiv = container.firstChild.firstChild;
+        expect(hiddenDiv.hidden).toBe(true);
+        expect(hiddenDiv.innerHTML).toBe('');
+        // Run offscreen update
+        if (__DEV__) {
+          expect(Scheduler).toFlushAndYield(['Bar', 'Bar']);
+        } else {
+          expect(Scheduler).toFlushAndYield(['Bar']);
+        }
+        expect(hiddenDiv.hidden).toBe(true);
+        expect(hiddenDiv.innerHTML).toBe('<p>bar 0</p>');
       });
-      return (
-        <div>
-          <LegacyHiddenDiv hidden={true}>
-            <Bar />
-          </LegacyHiddenDiv>
-          <Baz />
-        </div>
-      );
-    }
 
-    const root = ReactDOM.unstable_createRoot(container);
-    let hiddenDiv;
-    act(() => {
-      root.render(<Foo />);
-      expect(Scheduler).toFlushAndYieldThrough(['Foo', 'Baz', 'Foo#effect']);
-      hiddenDiv = container.firstChild.firstChild;
-      expect(hiddenDiv.hidden).toBe(true);
-      expect(hiddenDiv.innerHTML).toBe('');
-      // Run offscreen update
-      expect(Scheduler).toFlushAndYield(['Bar']);
-      expect(hiddenDiv.hidden).toBe(true);
+      ReactDOM.flushSync(() => {
+        setCounter(1);
+      });
+      // Should not flush yet
       expect(hiddenDiv.innerHTML).toBe('<p>bar 0</p>');
-    });
 
-    ReactDOM.flushSync(() => {
-      setCounter(1);
-    });
-    // Should not flush yet
-    expect(hiddenDiv.innerHTML).toBe('<p>bar 0</p>');
-
-    // Run offscreen update
-    expect(Scheduler).toFlushAndYield(['Bar']);
-    expect(hiddenDiv.innerHTML).toBe('<p>bar 1</p>');
-  });
+      // Run offscreen update
+      if (__DEV__) {
+        expect(Scheduler).toFlushAndYield(['Bar', 'Bar']);
+      } else {
+        expect(Scheduler).toFlushAndYield(['Bar']);
+      }
+      expect(hiddenDiv.innerHTML).toBe('<p>bar 1</p>');
+    },
+  );
 
   it('can render ridiculously large number of roots without triggering infinite update loop error', () => {
     class Foo extends React.Component {
@@ -1622,7 +1625,7 @@ describe('ReactUpdates', () => {
 
       let error = null;
       let stack = null;
-      const originalConsoleError = console.error;
+      let originalConsoleError = console.error;
       console.error = (e, s) => {
         error = e;
         stack = s;
@@ -1637,7 +1640,7 @@ describe('ReactUpdates', () => {
               Scheduler.unstable_clearYields();
             }
             expect(error).toContain('Warning: Maximum update depth exceeded.');
-            expect(stack).toContain(' NonTerminating');
+            expect(stack).toContain('in NonTerminating');
             // rethrow error to prevent going into an infinite loop when act() exits
             throw error;
           });

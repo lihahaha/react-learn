@@ -8,7 +8,7 @@
  */
 
 import type {Instance} from 'react-reconciler/src/ReactFiberHostConfig';
-import type {FiberRoot} from 'react-reconciler/src/ReactInternalTypes';
+import type {FiberRoot} from 'react-reconciler/src/ReactFiberRoot';
 import type {
   Family,
   RefreshUpdate,
@@ -62,20 +62,20 @@ WeakMap<any, Family> | Map<any, Family> = new PossiblyWeakMap();
 let pendingUpdates: Array<[Family, any]> = [];
 
 // This is injected by the renderer via DevTools global hook.
-const helpersByRendererID: Map<number, RendererHelpers> = new Map();
+let helpersByRendererID: Map<number, RendererHelpers> = new Map();
 
-const helpersByRoot: Map<FiberRoot, RendererHelpers> = new Map();
+let helpersByRoot: Map<FiberRoot, RendererHelpers> = new Map();
 
 // We keep track of mounted roots so we can schedule updates.
-const mountedRoots: Set<FiberRoot> = new Set();
+let mountedRoots: Set<FiberRoot> = new Set();
 // If a root captures an error, we remember it so we can retry on edit.
-const failedRoots: Set<FiberRoot> = new Set();
+let failedRoots: Set<FiberRoot> = new Set();
 
 // In environments that support WeakMap, we also remember the last element for every root.
 // It needs to be weak because we do this even for roots that failed to mount.
 // If there is no WeakMap, we won't attempt to do retrying.
 // $FlowIssue
-const rootElements: WeakMap<any, ReactNodeList> | null = // $FlowIssue
+let rootElements: WeakMap<any, ReactNodeList> | null = // $FlowIssue
   typeof WeakMap === 'function' ? new WeakMap() : null;
 
 let isPerformingRefresh = false;
@@ -164,14 +164,14 @@ function resolveFamily(type) {
 
 // If we didn't care about IE11, we could use new Map/Set(iterable).
 function cloneMap<K, V>(map: Map<K, V>): Map<K, V> {
-  const clone = new Map();
+  let clone = new Map();
   map.forEach((value, key) => {
     clone.set(key, value);
   });
   return clone;
 }
 function cloneSet<T>(set: Set<T>): Set<T> {
-  const clone = new Set();
+  let clone = new Set();
   set.forEach(value => {
     clone.add(value);
   });
@@ -233,9 +233,9 @@ export function performReactRefresh(): RefreshUpdate | null {
     // If we don't do this, there is a risk they will be mutated while
     // we iterate over them. For example, trying to recover a failed root
     // may cause another root to be added to the failed list -- an infinite loop.
-    const failedRootsSnapshot = cloneSet(failedRoots);
-    const mountedRootsSnapshot = cloneSet(mountedRoots);
-    const helpersByRootSnapshot = cloneMap(helpersByRoot);
+    let failedRootsSnapshot = cloneSet(failedRoots);
+    let mountedRootsSnapshot = cloneSet(mountedRoots);
+    let helpersByRootSnapshot = cloneMap(helpersByRoot);
 
     failedRootsSnapshot.forEach(root => {
       const helpers = helpersByRootSnapshot.get(root);
@@ -397,7 +397,7 @@ export function findAffectedHostInstances(
   families: Array<Family>,
 ): Set<Instance> {
   if (__DEV__) {
-    const affectedInstances = new Set();
+    let affectedInstances = new Set();
     mountedRoots.forEach(root => {
       const helpers = helpersByRoot.get(root);
       if (helpers === undefined) {

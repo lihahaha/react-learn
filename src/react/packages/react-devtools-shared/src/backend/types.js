@@ -9,7 +9,7 @@
 
 import type {ReactContext} from 'shared/ReactTypes';
 import type {Source} from 'shared/ReactElementType';
-import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
+import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {
   ComponentFilter,
   ElementType,
@@ -25,33 +25,6 @@ export type WorkTag = number;
 export type SideEffectTag = number;
 export type ExpirationTime = number;
 
-export type WorkTagMap = {|
-  Block: WorkTag,
-  ClassComponent: WorkTag,
-  ContextConsumer: WorkTag,
-  ContextProvider: WorkTag,
-  CoroutineComponent: WorkTag,
-  CoroutineHandlerPhase: WorkTag,
-  DehydratedSuspenseComponent: WorkTag,
-  ForwardRef: WorkTag,
-  Fragment: WorkTag,
-  FunctionComponent: WorkTag,
-  HostComponent: WorkTag,
-  HostPortal: WorkTag,
-  HostRoot: WorkTag,
-  HostText: WorkTag,
-  IncompleteClassComponent: WorkTag,
-  IndeterminateComponent: WorkTag,
-  LazyComponent: WorkTag,
-  MemoComponent: WorkTag,
-  Mode: WorkTag,
-  Profiler: WorkTag,
-  SimpleMemoComponent: WorkTag,
-  SuspenseComponent: WorkTag,
-  SuspenseListComponent: WorkTag,
-  YieldComponent: WorkTag,
-|};
-
 // TODO: If it's useful for the frontend to know which types of data an Element has
 // (e.g. props, state, context, hooks) then we could add a bitmask field for this
 // to keep the number of attributes small.
@@ -65,7 +38,6 @@ export type NativeType = Object;
 export type RendererID = number;
 
 type Dispatcher = any;
-export type CurrentDispatcherRef = {|current: null | Dispatcher|};
 
 export type GetDisplayNameForFiberID = (
   id: number,
@@ -105,7 +77,7 @@ export type ReactRenderer = {
   scheduleUpdate?: ?(fiber: Object) => void,
   setSuspenseHandler?: ?(shouldSuspend: (fiber: Object) => boolean) => void,
   // Only injected by React v16.8+ in order to support hooks inspection.
-  currentDispatcherRef?: CurrentDispatcherRef,
+  currentDispatcherRef?: {|current: null | Dispatcher|},
   // Only injected by React v16.9+ in DEV mode.
   // Enables DevTools to append owners-only component stack to error messages.
   getCurrentFiber?: () => Fiber | null,
@@ -202,7 +174,6 @@ export type InspectedElement = {|
   hooks: Object | null,
   props: Object | null,
   state: Object | null,
-  key: number | string | null,
 
   // List of owners
   owners: Array<Owner> | null,

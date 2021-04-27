@@ -7,7 +7,9 @@
  * @flow
  */
 
+import {addUserTimingListener} from 'shared/ReactFeatureFlags';
 import {isEnabled} from './src/events/ReactDOMEventListener';
+import {getClosestInstanceFromNode} from './src/client/ReactDOMComponentTree';
 
 import {__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED} from './src/client/ReactDOM';
 
@@ -16,6 +18,11 @@ Object.assign((__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: any), {
   ReactBrowserEventEmitter: {
     isEnabled,
   },
+  ReactDOMComponentTree: {
+    getClosestInstanceFromNode,
+  },
+  // Perf experiment
+  addUserTimingListener,
 });
 
 export {
@@ -29,12 +36,11 @@ export {
   render,
   unmountComponentAtNode,
   createRoot,
-  createRoot as unstable_createRoot,
   createBlockingRoot,
-  createBlockingRoot as unstable_createBlockingRoot,
+  unstable_discreteUpdates,
+  unstable_flushDiscreteUpdates,
   unstable_flushControlled,
   unstable_scheduleHydration,
   unstable_renderSubtreeIntoContainer,
   unstable_createPortal,
-  unstable_createEventHandle,
 } from './src/client/ReactDOM';

@@ -17,10 +17,6 @@ export type SuspenseConfig = {|
   busyMinDurationMs?: number,
 |};
 
-export type TimeoutConfig = {|
-  timeoutMs: number,
-|};
-
 export function requestCurrentSuspenseConfig(): null | SuspenseConfig {
   return ReactCurrentBatchConfig.suspense;
 }

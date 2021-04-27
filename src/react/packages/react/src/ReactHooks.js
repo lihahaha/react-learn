@@ -8,15 +8,10 @@
  */
 
 import type {
-  MutableSource,
-  MutableSourceGetSnapshotFn,
-  MutableSourceSubscribeFn,
   ReactContext,
   ReactEventResponder,
   ReactEventResponderListener,
 } from 'shared/ReactTypes';
-import type {OpaqueIDType} from 'react-reconciler/src/ReactFiberHostConfig';
-
 import invariant from 'shared/invariant';
 import {REACT_RESPONDER_TYPE} from 'shared/ReactSymbols';
 
@@ -42,7 +37,7 @@ function resolveDispatcher() {
 export function useContext<T>(
   Context: ReactContext<T>,
   unstable_observedBits: number | boolean | void,
-): T {
+) {
   const dispatcher = resolveDispatcher();
   if (__DEV__) {
     if (unstable_observedBits !== undefined) {
@@ -181,18 +176,4 @@ export function useTransition(
 export function useDeferredValue<T>(value: T, config: ?Object): T {
   const dispatcher = resolveDispatcher();
   return dispatcher.useDeferredValue(value, config);
-}
-
-export function useOpaqueIdentifier(): OpaqueIDType | void {
-  const dispatcher = resolveDispatcher();
-  return dispatcher.useOpaqueIdentifier();
-}
-
-export function useMutableSource<Source, Snapshot>(
-  source: MutableSource<Source>,
-  getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
-  subscribe: MutableSourceSubscribeFn<Source, Snapshot>,
-): Snapshot {
-  const dispatcher = resolveDispatcher();
-  return dispatcher.useMutableSource(source, getSnapshot, subscribe);
 }

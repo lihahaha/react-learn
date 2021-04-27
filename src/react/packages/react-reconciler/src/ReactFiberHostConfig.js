@@ -18,7 +18,5 @@ import invariant from 'shared/invariant';
 // We should never resolve to this file, but it exists to make
 // sure that if we *do* accidentally break the configuration,
 // the failure isn't silent.
-
+export * from "./forks/ReactFiberHostConfig.dom";
 // invariant(false, 'This module must be shimmed by a specific renderer.');
-
-export * from './forks/ReactFiberHostConfig.dom'; //sy

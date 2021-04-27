@@ -7,4 +7,6 @@
  * @flow
  */
 
-export * from './src/dom/Input';
+'use strict';
+
+module.exports = require('./src/dom/Input');

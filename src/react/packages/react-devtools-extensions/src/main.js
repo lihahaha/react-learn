@@ -1,7 +1,7 @@
 /* global chrome */
 
 import {createElement} from 'react';
-import {unstable_createRoot as createRoot, flushSync} from 'react-dom';
+import {createRoot, flushSync} from 'react-dom';
 import Bridge from 'react-devtools-shared/src/bridge';
 import Store from 'react-devtools-shared/src/devtools/store';
 import {getBrowserName, getBrowserTheme} from './utils';
@@ -228,11 +228,11 @@ function createPanelIfReactLoaded() {
       cloneStyleTags = () => {
         const linkTags = [];
         // eslint-disable-next-line no-for-of-loops/no-for-of-loops
-        for (const linkTag of document.getElementsByTagName('link')) {
+        for (let linkTag of document.getElementsByTagName('link')) {
           if (linkTag.rel === 'stylesheet') {
             const newLinkTag = document.createElement('link');
             // eslint-disable-next-line no-for-of-loops/no-for-of-loops
-            for (const attribute of linkTag.attributes) {
+            for (let attribute of linkTag.attributes) {
               newLinkTag.setAttribute(attribute.nodeName, attribute.nodeValue);
             }
             linkTags.push(newLinkTag);

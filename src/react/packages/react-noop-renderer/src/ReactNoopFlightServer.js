@@ -14,9 +14,7 @@
  * environment.
  */
 
-import type {ReactModel} from 'react-server/src/ReactFlightServer';
-
-import {saveModule} from 'react-noop-renderer/flight-modules';
+import type {ReactModel} from 'react-server/flight.inline-typed';
 
 import ReactFlightServer from 'react-server/flight';
 
@@ -42,21 +40,18 @@ const ReactNoopFlightServer = ReactFlightServer({
   formatChunk(type: string, props: Object): Uint8Array {
     return Buffer.from(JSON.stringify({type, props}), 'utf8');
   },
-  resolveModuleMetaData(config: void, renderFn: Function) {
-    return saveModule(renderFn);
+  renderHostChildrenToString(children: React$Element<any>): string {
+    throw new Error('The noop rendered do not support host components');
   },
 });
 
 function render(model: ReactModel): Destination {
-  const destination: Destination = [];
-  const bundlerConfig = undefined;
-  const request = ReactNoopFlightServer.createRequest(
-    model,
-    destination,
-    bundlerConfig,
-  );
+  let destination: Destination = [];
+  let request = ReactNoopFlightServer.createRequest(model, destination);
   ReactNoopFlightServer.startWork(request);
   return destination;
 }
 
-export {render};
+export default {
+  render,
+};

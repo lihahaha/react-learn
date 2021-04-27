@@ -17,7 +17,6 @@ let ReactDOMComponentTree;
 let listenToEvent;
 let ReactDOMEventListener;
 let ReactTestUtils;
-let ReactFeatureFlags;
 
 let idCallOrder;
 const recordID = function(id) {
@@ -61,21 +60,13 @@ describe('ReactBrowserEventEmitter', () => {
     jest.resetModules();
     LISTENER.mockClear();
 
-    ReactFeatureFlags = require('shared/ReactFeatureFlags');
-    EventPluginGetListener = require('react-dom/src/events/getListener')
-      .default;
+    EventPluginGetListener = require('legacy-events/getListener').default;
     EventPluginRegistry = require('legacy-events/EventPluginRegistry');
     React = require('react');
     ReactDOM = require('react-dom');
     ReactDOMComponentTree = require('../client/ReactDOMComponentTree');
-    if (ReactFeatureFlags.enableModernEventSystem) {
-      listenToEvent = require('../events/DOMModernPluginEventSystem')
-        .listenToEvent;
-    } else {
-      listenToEvent = require('../events/DOMLegacyEventPluginSystem')
-        .legacyListenToEvent;
-    }
-
+    listenToEvent = require('../events/DOMLegacyEventPluginSystem')
+      .legacyListenToEvent;
     ReactDOMEventListener = require('../events/ReactDOMEventListener');
     ReactTestUtils = require('react-dom/test-utils');
 

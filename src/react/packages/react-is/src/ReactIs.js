@@ -10,6 +10,8 @@
 'use strict';
 
 import {
+  REACT_ASYNC_MODE_TYPE,
+  REACT_CONCURRENT_MODE_TYPE,
   REACT_CONTEXT_TYPE,
   REACT_ELEMENT_TYPE,
   REACT_FORWARD_REF_TYPE,
@@ -32,6 +34,8 @@ export function typeOf(object: any) {
         const type = object.type;
 
         switch (type) {
+          case REACT_ASYNC_MODE_TYPE:
+          case REACT_CONCURRENT_MODE_TYPE:
           case REACT_FRAGMENT_TYPE:
           case REACT_PROFILER_TYPE:
           case REACT_STRICT_MODE_TYPE:
@@ -59,6 +63,9 @@ export function typeOf(object: any) {
   return undefined;
 }
 
+// AsyncMode is deprecated along with isAsyncMode
+export const AsyncMode = REACT_ASYNC_MODE_TYPE;
+export const ConcurrentMode = REACT_CONCURRENT_MODE_TYPE;
 export const ContextConsumer = REACT_CONTEXT_TYPE;
 export const ContextProvider = REACT_PROVIDER_TYPE;
 export const Element = REACT_ELEMENT_TYPE;
@@ -74,7 +81,6 @@ export const Suspense = REACT_SUSPENSE_TYPE;
 export {isValidElementType};
 
 let hasWarnedAboutDeprecatedIsAsyncMode = false;
-let hasWarnedAboutDeprecatedIsConcurrentMode = false;
 
 // AsyncMode should be deprecated
 export function isAsyncMode(object: any) {
@@ -84,24 +90,15 @@ export function isAsyncMode(object: any) {
       // Using console['warn'] to evade Babel and ESLint
       console['warn'](
         'The ReactIs.isAsyncMode() alias has been deprecated, ' +
-          'and will be removed in React 17+.',
+          'and will be removed in React 17+. Update your code to use ' +
+          'ReactIs.isConcurrentMode() instead. It has the exact same API.',
       );
     }
   }
-  return false;
+  return isConcurrentMode(object) || typeOf(object) === REACT_ASYNC_MODE_TYPE;
 }
 export function isConcurrentMode(object: any) {
-  if (__DEV__) {
-    if (!hasWarnedAboutDeprecatedIsConcurrentMode) {
-      hasWarnedAboutDeprecatedIsConcurrentMode = true;
-      // Using console['warn'] to evade Babel and ESLint
-      console['warn'](
-        'The ReactIs.isConcurrentMode() alias has been deprecated, ' +
-          'and will be removed in React 17+.',
-      );
-    }
-  }
-  return false;
+  return typeOf(object) === REACT_CONCURRENT_MODE_TYPE;
 }
 export function isContextConsumer(object: any) {
   return typeOf(object) === REACT_CONTEXT_TYPE;

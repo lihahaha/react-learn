@@ -7,8 +7,6 @@
  * @flow
  */
 
-import type {Thenable} from 'shared/ReactTypes';
-
 import * as React from 'react';
 import {createContext} from 'react';
 
@@ -22,7 +20,10 @@ import {createContext} from 'react';
 //    The size of this cache is bounded by how many renders were profiled,
 //    and it will be fully reset between profiling sessions.
 
-export type {Thenable};
+export type Thenable<T> = {
+  then(resolve: (T) => mixed, reject: (mixed) => mixed): mixed,
+  ...
+};
 
 type Suspender = {then(resolve: () => mixed, reject: () => mixed): mixed, ...};
 

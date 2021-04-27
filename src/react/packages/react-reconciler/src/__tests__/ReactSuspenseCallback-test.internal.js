@@ -31,20 +31,23 @@ describe('ReactSuspense', () => {
 
   function createThenable() {
     let completed = false;
-    let resolve;
-    const promise = new Promise(res => {
-      resolve = () => {
-        completed = true;
-        res();
-      };
-    });
+    const resolveRef = {current: null};
+    let promise = {
+      then(resolve, reject) {
+        resolveRef.current = () => {
+          completed = true;
+          resolve();
+        };
+      },
+    };
+
     const PromiseComp = () => {
       if (!completed) {
         throw promise;
       }
       return 'Done';
     };
-    return {promise, resolve, PromiseComp};
+    return {promise, resolveRef, PromiseComp};
   }
 
   it('check type', () => {
@@ -71,8 +74,8 @@ describe('ReactSuspense', () => {
     expect(() => Scheduler.unstable_flushAll()).toErrorDev([]);
   });
 
-  it('1 then 0 suspense callback', async () => {
-    const {promise, resolve, PromiseComp} = createThenable();
+  it('1 then 0 suspense callback', () => {
+    const {promise, resolveRef, PromiseComp} = createThenable();
 
     let ops = [];
     const suspenseCallback = thenables => {
@@ -91,21 +94,21 @@ describe('ReactSuspense', () => {
     expect(ops).toEqual([new Set([promise])]);
     ops = [];
 
-    await resolve();
+    resolveRef.current();
     expect(Scheduler).toFlushWithoutYielding();
     expect(ReactNoop.getChildren()).toEqual([text('Done')]);
     expect(ops).toEqual([]);
   });
 
-  it('2 then 1 then 0 suspense callback', async () => {
+  it('2 then 1 then 0 suspense callback', () => {
     const {
       promise: promise1,
-      resolve: resolve1,
+      resolveRef: resolveRef1,
       PromiseComp: PromiseComp1,
     } = createThenable();
     const {
       promise: promise2,
-      resolve: resolve2,
+      resolveRef: resolveRef2,
       PromiseComp: PromiseComp2,
     } = createThenable();
 
@@ -129,14 +132,14 @@ describe('ReactSuspense', () => {
     expect(ops).toEqual([new Set([promise1, promise2])]);
     ops = [];
 
-    await resolve1();
+    resolveRef1.current();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
     expect(ReactNoop.getChildren()).toEqual([text('Waiting Tier 1')]);
     expect(ops).toEqual([new Set([promise2])]);
     ops = [];
 
-    await resolve2();
+    resolveRef2.current();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
     expect(ReactNoop.getChildren()).toEqual([text('Done'), text('Done')]);
@@ -146,11 +149,11 @@ describe('ReactSuspense', () => {
   it('nested suspense promises are reported only for their tier', () => {
     const {promise, PromiseComp} = createThenable();
 
-    const ops1 = [];
+    let ops1 = [];
     const suspenseCallback1 = thenables => {
       ops1.push(thenables);
     };
-    const ops2 = [];
+    let ops2 = [];
     const suspenseCallback2 = thenables => {
       ops2.push(thenables);
     };
@@ -174,15 +177,15 @@ describe('ReactSuspense', () => {
     expect(ops2).toEqual([new Set([promise])]);
   });
 
-  it('competing suspense promises', async () => {
+  it('competing suspense promises', () => {
     const {
       promise: promise1,
-      resolve: resolve1,
+      resolveRef: resolveRef1,
       PromiseComp: PromiseComp1,
     } = createThenable();
     const {
       promise: promise2,
-      resolve: resolve2,
+      resolveRef: resolveRef2,
       PromiseComp: PromiseComp2,
     } = createThenable();
 
@@ -216,7 +219,7 @@ describe('ReactSuspense', () => {
     ops1 = [];
     ops2 = [];
 
-    await resolve1();
+    resolveRef1.current();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
     expect(ReactNoop.getChildren()).toEqual([
@@ -228,7 +231,7 @@ describe('ReactSuspense', () => {
     ops1 = [];
     ops2 = [];
 
-    await resolve2();
+    resolveRef2.current();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
     expect(ReactNoop.getChildren()).toEqual([text('Done'), text('Done')]);
@@ -247,7 +250,7 @@ describe('ReactSuspense', () => {
       // you can probably just delete it. It's not worth the hassle.
       jest.resetModules();
 
-      const errors = [];
+      let errors = [];
       let hasCaughtError = false;
       jest.mock('shared/ReactErrorUtils', () => ({
         invokeGuardedCallback(name, fn, context, ...args) {

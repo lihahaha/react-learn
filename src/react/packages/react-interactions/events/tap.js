@@ -7,4 +7,6 @@
  * @flow
  */
 
-export * from './src/dom/Tap';
+'use strict';
+
+module.exports = require('./src/dom/Tap');

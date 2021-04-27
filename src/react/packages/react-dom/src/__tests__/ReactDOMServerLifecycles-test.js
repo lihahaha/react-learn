@@ -285,21 +285,19 @@ describe('ReactDOMServerLifecycles', () => {
   });
 
   it('should warn about deprecated lifecycle hooks', () => {
-    class MyComponent extends React.Component {
+    class Component extends React.Component {
       componentWillMount() {}
       render() {
         return null;
       }
     }
 
-    expect(() => ReactDOMServer.renderToString(<MyComponent />)).toWarnDev(
-      'componentWillMount has been renamed, and is not recommended for use. See https://fb.me/react-unsafe-component-lifecycles for details.\n\n' +
-        '* Move code from componentWillMount to componentDidMount (preferred in most cases) or the constructor.\n\n' +
-        'Please update the following components: MyComponent',
+    expect(() => ReactDOMServer.renderToString(<Component />)).toWarnDev(
+      'componentWillMount has been renamed',
     );
 
     // De-duped
-    ReactDOMServer.renderToString(<MyComponent />);
+    ReactDOMServer.renderToString(<Component />);
   });
 
   describe('react-lifecycles-compat', () => {

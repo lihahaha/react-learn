@@ -11,7 +11,7 @@ import type {
   ReactDOMResponderContext,
   ReactDOMResponderEvent,
   PointerType,
-} from 'react-dom/src/shared/ReactDOMTypes';
+} from 'shared/ReactDOMTypes';
 import type {ReactEventResponderListener} from 'shared/ReactTypes';
 
 import * as React from 'react';
@@ -103,7 +103,6 @@ const rootEventTypes = hasPointerEvents
       'pointermove',
       'pointercancel',
       'scroll',
-      'blur',
     ]
   : [
       'click_active',
@@ -115,7 +114,6 @@ const rootEventTypes = hasPointerEvents
       'touchmove',
       'touchcancel',
       'scroll',
-      'blur',
     ];
 
 /**
@@ -699,13 +697,6 @@ const responderImpl = {
         removeRootEventTypes(context, state);
         break;
       }
-      case 'blur': {
-        // If we encounter a blur that happens on the pressed target
-        // then disengage the blur.
-        if (state.isActive && nativeEvent.target === state.responderTarget) {
-          dispatchCancel(context, props, state);
-        }
-      }
     }
   },
   onUnmount(
@@ -721,14 +712,11 @@ const responderImpl = {
   },
 };
 
-// $FlowFixMe Can't add generic types without causing a parsing/syntax errors
 export const TapResponder = React.DEPRECATED_createResponder(
   'Tap',
   responderImpl,
 );
 
-export function useTap(
-  props: TapProps,
-): ?ReactEventResponderListener<any, any> {
+export function useTap(props: TapProps): ReactEventResponderListener<any, any> {
   return React.DEPRECATED_useResponder(TapResponder, props);
 }

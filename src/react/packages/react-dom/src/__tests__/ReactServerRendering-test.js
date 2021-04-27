@@ -14,8 +14,10 @@ let React;
 let ReactDOMServer;
 let PropTypes;
 let ReactCurrentDispatcher;
-const enableSuspenseServerRenderer = require('shared/ReactFeatureFlags')
-  .enableSuspenseServerRenderer;
+
+function normalizeCodeLocInfo(str) {
+  return str && str.replace(/\(at .+?:\d+\)/g, '(at **)');
+}
 
 describe('ReactDOMServer', () => {
   beforeEach(() => {
@@ -163,11 +165,17 @@ describe('ReactDOMServer', () => {
     });
 
     it('should throw prop mapping error for an <iframe /> with invalid props', () => {
-      expect(() => {
+      let caughtErr;
+      try {
         ReactDOMServer.renderToString(<iframe style="border:none;" />);
-      }).toThrowError(
+      } catch (err) {
+        caughtErr = err;
+      }
+      expect(caughtErr).not.toBe(undefined);
+      expect(normalizeCodeLocInfo(caughtErr.message)).toContain(
         'The `style` prop expects a mapping from style properties to values, not ' +
-          "a string. For example, style={{marginRight: spacing + 'em'}} when using JSX.",
+          "a string. For example, style={{marginRight: spacing + 'em'}} when using JSX." +
+          (__DEV__ ? '\n    in iframe (at **)' : ''),
       );
     });
 
@@ -678,7 +686,7 @@ describe('ReactDOMServer', () => {
     expect(markup).toBe('<div></div>');
   });
 
-  if (!enableSuspenseServerRenderer) {
+  if (!__EXPERIMENTAL__) {
     it('throws for unsupported types on the server', () => {
       expect(() => {
         ReactDOMServer.renderToString(<React.Suspense />);
@@ -699,7 +707,7 @@ describe('ReactDOMServer', () => {
           ),
         );
         ReactDOMServer.renderToString(<LazyFoo />);
-      }).toThrow('ReactDOMServer does not yet support Suspense.');
+      }).toThrow('ReactDOMServer does not yet support lazy-loaded components.');
     });
 
     it('throws when suspending on the server', () => {

@@ -72,7 +72,7 @@ describe('ReactDOMSuspensePlaceholder', () => {
   }
 
   it('hides and unhides timed out DOM elements', async () => {
-    const divs = [
+    let divs = [
       React.createRef(null),
       React.createRef(null),
       React.createRef(null),
@@ -244,7 +244,7 @@ describe('ReactDOMSuspensePlaceholder', () => {
     let suspendOnce = Promise.resolve();
     function Suspend() {
       if (suspendOnce) {
-        const promise = suspendOnce;
+        let promise = suspendOnce;
         suspendOnce = null;
         throw promise;
       }

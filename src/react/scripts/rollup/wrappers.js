@@ -288,9 +288,10 @@ ${license}
 
 if (process.env.NODE_ENV !== "production") {
   module.exports = function $$$reconciler($$$hostConfig) {
-    var exports = {};
 ${source}
-    return exports;
+    var $$$renderer = module.exports;
+    module.exports = $$$reconciler;
+    return $$$renderer;
   };
 }`;
   },
@@ -303,9 +304,10 @@ ${source}
 ${license}
  */
 module.exports = function $$$reconciler($$$hostConfig) {
-    var exports = {};
 ${source}
-    return exports;
+    var $$$renderer = module.exports;
+    module.exports = $$$reconciler;
+    return $$$renderer;
 };`;
   },
 };

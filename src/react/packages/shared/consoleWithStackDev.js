@@ -29,11 +29,19 @@ function printWarning(level, format, args) {
   // When changing this logic, you might want to also
   // update consoleWithStackDev.www.js as well.
   if (__DEV__) {
-    const ReactDebugCurrentFrame = ReactSharedInternals.ReactDebugCurrentFrame;
-    const stack = ReactDebugCurrentFrame.getStackAddendum();
-    if (stack !== '') {
-      format += '%s';
-      args = args.concat([stack]);
+    const hasExistingStack =
+      args.length > 0 &&
+      typeof args[args.length - 1] === 'string' &&
+      args[args.length - 1].indexOf('\n    in') === 0;
+
+    if (!hasExistingStack) {
+      const ReactDebugCurrentFrame =
+        ReactSharedInternals.ReactDebugCurrentFrame;
+      const stack = ReactDebugCurrentFrame.getStackAddendum();
+      if (stack !== '') {
+        format += '%s';
+        args = args.concat([stack]);
+      }
     }
 
     const argsWithFormat = args.map(item => '' + item);

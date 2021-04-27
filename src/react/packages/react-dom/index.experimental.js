@@ -19,8 +19,10 @@ export {
   render,
   unmountComponentAtNode,
   // exposeConcurrentModeAPIs
-  createRoot as unstable_createRoot,
-  createBlockingRoot as unstable_createBlockingRoot,
+  createRoot,
+  createBlockingRoot,
+  unstable_discreteUpdates,
+  unstable_flushDiscreteUpdates,
   unstable_flushControlled,
   unstable_scheduleHydration,
   // Disabled behind disableUnstableRenderSubtreeIntoContainer

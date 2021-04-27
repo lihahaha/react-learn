@@ -66,6 +66,11 @@ function dispatchClickEvent(element) {
 describe('DOMEventResponderSystem', () => {
   let container;
 
+  if (!__EXPERIMENTAL__) {
+    it("empty test so Jest doesn't complain", () => {});
+    return;
+  }
+
   beforeEach(() => {
     jest.resetModules();
     ReactFeatureFlags = require('shared/ReactFeatureFlags');
@@ -84,7 +89,6 @@ describe('DOMEventResponderSystem', () => {
     container = null;
   });
 
-  // @gate experimental
   it('can mount and render correctly with the ReactTestRenderer', () => {
     jest.resetModules();
     ReactFeatureFlags = require('shared/ReactFeatureFlags');
@@ -102,7 +106,6 @@ describe('DOMEventResponderSystem', () => {
     expect(renderer).toMatchRenderedOutput(<div>Hello world</div>);
   });
 
-  // @gate experimental
   it('can render correctly with the ReactDOMServer', () => {
     const TestResponder = createEventResponder({});
 
@@ -115,7 +118,6 @@ describe('DOMEventResponderSystem', () => {
     expect(output).toBe(`<div data-reactroot="">Hello world</div>`);
   });
 
-  // @gate experimental
   it('can render correctly with the ReactDOMServer hydration', () => {
     const onEvent = jest.fn();
     const TestResponder = createEventResponder({
@@ -145,10 +147,9 @@ describe('DOMEventResponderSystem', () => {
     expect(onEvent).toHaveBeenCalledTimes(1);
   });
 
-  // @gate experimental
   it('the event responders should fire on click event', () => {
     let eventResponderFiredCount = 0;
-    const eventLog = [];
+    let eventLog = [];
     const buttonRef = React.createRef();
 
     const TestResponder = createEventResponder({
@@ -201,13 +202,12 @@ describe('DOMEventResponderSystem', () => {
     expect(eventResponderFiredCount).toBe(2);
   });
 
-  // @gate experimental
   it('the event responders should fire on click event (passive events forced)', () => {
     // JSDOM does not support passive events, so this manually overrides the value to be true
     const checkPassiveEvents = require('react-dom/src/events/checkPassiveEvents');
     checkPassiveEvents.passiveBrowserEventsSupported = true;
 
-    const eventLog = [];
+    let eventLog = [];
     const buttonRef = React.createRef();
 
     const TestResponder = createEventResponder({
@@ -234,7 +234,7 @@ describe('DOMEventResponderSystem', () => {
     ReactDOM.render(<Test />, container);
 
     // Clicking the button should trigger the event responder onEvent()
-    const buttonElement = buttonRef.current;
+    let buttonElement = buttonRef.current;
     dispatchClickEvent(buttonElement);
     expect(eventLog.length).toBe(1);
     expect(eventLog).toEqual([
@@ -246,7 +246,6 @@ describe('DOMEventResponderSystem', () => {
     ]);
   });
 
-  // @gate experimental
   it('nested event responders should not fire multiple times', () => {
     let eventResponderFiredCount = 0;
     let eventLog = [];
@@ -328,7 +327,6 @@ describe('DOMEventResponderSystem', () => {
     ]);
   });
 
-  // @gate experimental
   it('nested event responders should fire in the correct order', () => {
     let eventLog = [];
     const buttonRef = React.createRef();
@@ -392,9 +390,8 @@ describe('DOMEventResponderSystem', () => {
     expect(eventLog).toEqual(['B [bubble]', 'A [bubble]']);
   });
 
-  // @gate experimental
   it('nested event responders should fire in the correct order #2', () => {
-    const eventLog = [];
+    let eventLog = [];
     const buttonRef = React.createRef();
 
     const TestResponder = createEventResponder({
@@ -423,15 +420,14 @@ describe('DOMEventResponderSystem', () => {
     ReactDOM.render(<Test />, container);
 
     // Clicking the button should trigger the event responder onEvent()
-    const buttonElement = buttonRef.current;
+    let buttonElement = buttonRef.current;
     dispatchClickEvent(buttonElement);
 
     expect(eventLog).toEqual(['B [bubble]']);
   });
 
-  // @gate experimental
   it('custom event dispatching for click -> magicClick works', () => {
-    const eventLog = [];
+    let eventLog = [];
     const buttonRef = React.createRef();
 
     const TestResponder = createEventResponder({
@@ -470,13 +466,12 @@ describe('DOMEventResponderSystem', () => {
     ReactDOM.render(<Test />, container);
 
     // Clicking the button should trigger the event responder onEvent()
-    const buttonElement = buttonRef.current;
+    let buttonElement = buttonRef.current;
     dispatchClickEvent(buttonElement);
 
     expect(eventLog).toEqual(['magic event fired', 'magicclick', 'bubble']);
   });
 
-  // @gate experimental
   it('the event responder onMount() function should fire', () => {
     let onMountFired = 0;
 
@@ -510,7 +505,6 @@ describe('DOMEventResponderSystem', () => {
     expect(onMountFired).toEqual(2);
   });
 
-  // @gate experimental
   it('the event responder onUnmount() function should fire', () => {
     let onUnmountFired = 0;
 
@@ -557,7 +551,6 @@ describe('DOMEventResponderSystem', () => {
     expect(onUnmountFired).toEqual(4);
   });
 
-  // @gate experimental
   it('the event responder onUnmount() function should fire using scopes', () => {
     let onUnmountFired = 0;
 
@@ -605,7 +598,6 @@ describe('DOMEventResponderSystem', () => {
     expect(onUnmountFired).toEqual(4);
   });
 
-  // @gate experimental
   it('the event responder onUnmount() function should fire with state', () => {
     let counter = 0;
 
@@ -629,11 +621,10 @@ describe('DOMEventResponderSystem', () => {
     expect(counter).toEqual(5);
   });
 
-  // @gate experimental
   it('the event responder target listeners should correctly fire for only their events', () => {
     let clickEventComponent1Fired = 0;
     let clickEventComponent2Fired = 0;
-    const eventLog = [];
+    let eventLog = [];
     const buttonRef = React.createRef();
 
     const TestResponderA = createEventResponder({
@@ -673,7 +664,7 @@ describe('DOMEventResponderSystem', () => {
 
     ReactDOM.render(<Test />, container);
 
-    const buttonElement = buttonRef.current;
+    let buttonElement = buttonRef.current;
     dispatchClickEvent(buttonElement);
 
     expect(clickEventComponent1Fired).toBe(1);
@@ -691,7 +682,6 @@ describe('DOMEventResponderSystem', () => {
     ]);
   });
 
-  // @gate experimental
   it('the event responder system should warn on accessing invalid properties', () => {
     const TestResponder = createEventResponder({
       targetEventTypes: ['click'],
@@ -706,7 +696,7 @@ describe('DOMEventResponderSystem', () => {
     });
 
     let handler;
-    const buttonRef = React.createRef();
+    let buttonRef = React.createRef();
     const Test = () => {
       const listener = React.DEPRECATED_useResponder(TestResponder, {
         onClick: handler,
@@ -757,7 +747,6 @@ describe('DOMEventResponderSystem', () => {
     expect(container.innerHTML).toBe('<button>Click me!</button>');
   });
 
-  // @gate experimental
   it('should work with event responder hooks', () => {
     const buttonRef = React.createRef();
     const eventLogs = [];
@@ -800,8 +789,7 @@ describe('DOMEventResponderSystem', () => {
     buttonRef.current.dispatchEvent(createEvent('foobar'));
   });
 
-  // @gate experimental
-  it('should work with concurrent mode updates', async () => {
+  it.experimental('should work with concurrent mode updates', async () => {
     const log = [];
     const TestResponder = createEventResponder({
       targetEventTypes: ['click'],
@@ -821,7 +809,7 @@ describe('DOMEventResponderSystem', () => {
       );
     }
 
-    const root = ReactDOM.createRoot(container);
+    let root = ReactDOM.createRoot(container);
     root.render(<Test counter={0} />);
     expect(Scheduler).toFlushAndYield(['Test']);
 
@@ -850,7 +838,6 @@ describe('DOMEventResponderSystem', () => {
     expect(log).toEqual([{counter: 1}]);
   });
 
-  // @gate experimental
   it('should correctly pass through event properties', () => {
     const timeStamps = [];
     const ref = React.createRef();
@@ -915,7 +902,6 @@ describe('DOMEventResponderSystem', () => {
     ]);
   });
 
-  // @gate experimental
   it('should not propagate target events through portals by default', () => {
     const buttonRef = React.createRef();
     const onEvent = jest.fn();
@@ -939,7 +925,6 @@ describe('DOMEventResponderSystem', () => {
     expect(onEvent).not.toBeCalled();
   });
 
-  // @gate experimental
   it('should propagate target events through portals when enabled', () => {
     const buttonRef = React.createRef();
     const onEvent = jest.fn();
@@ -962,41 +947,5 @@ describe('DOMEventResponderSystem', () => {
     dispatchClickEvent(buttonRef.current);
     document.body.removeChild(domNode);
     expect(onEvent).toBeCalled();
-  });
-
-  // @gate experimental
-  it('event upgrading should work correctly', () => {
-    let eventResponderFiredCount = 0;
-    const buttonRef = React.createRef();
-
-    const TestResponder = createEventResponder({
-      targetEventTypes: ['click'],
-      onEvent: (event, context, props, state) => {
-        eventResponderFiredCount++;
-        if (!state.addedRootEventTypes) {
-          context.addRootEventTypes(['click_active']);
-        }
-        state.addedRootEventTypes = true;
-      },
-    });
-
-    function Test() {
-      const listener = React.DEPRECATED_useResponder(TestResponder, {});
-
-      return (
-        <button ref={buttonRef} DEPRECATED_flareListeners={listener}>
-          Click me!
-        </button>
-      );
-    }
-
-    ReactDOM.render(<Test />, container);
-    expect(container.innerHTML).toBe('<button>Click me!</button>');
-
-    const buttonElement = buttonRef.current;
-    dispatchClickEvent(buttonElement);
-    expect(eventResponderFiredCount).toBe(1);
-    dispatchClickEvent(buttonElement);
-    expect(eventResponderFiredCount).toBe(2);
   });
 });

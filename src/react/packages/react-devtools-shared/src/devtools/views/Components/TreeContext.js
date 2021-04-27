@@ -157,8 +157,7 @@ type State = {|
 |};
 
 function reduceTreeState(store: Store, state: State, action: Action): State {
-  let {numElements, selectedElementIndex, selectedElementID} = state;
-  const ownerID = state.ownerID;
+  let {numElements, ownerID, selectedElementIndex, selectedElementID} = state;
 
   let lookupIDForIndex = true;
 
@@ -278,13 +277,13 @@ function reduceTreeState(store: Store, state: State, action: Action): State {
 
 function reduceSearchState(store: Store, state: State, action: Action): State {
   let {
+    ownerID,
     searchIndex,
     searchResults,
     searchText,
     selectedElementID,
     selectedElementIndex,
   } = state;
-  const ownerID = state.ownerID;
 
   const prevSearchIndex = searchIndex;
   const prevSearchText = searchText;
@@ -453,8 +452,10 @@ function reduceOwnersState(store: Store, state: State, action: Action): State {
     selectedElementIndex,
     ownerID,
     ownerFlatTree,
+    searchIndex,
+    searchResults,
+    searchText,
   } = state;
-  const {searchIndex, searchResults, searchText} = state;
 
   let prevSelectedElementIndex = selectedElementIndex;
 
@@ -733,7 +734,7 @@ function TreeContextController({
       prevSelectedElementID.current = state.selectedElementID;
 
       if (state.selectedElementID !== null) {
-        const element = store.getElementByID(state.selectedElementID);
+        let element = store.getElementByID(state.selectedElementID);
         if (element !== null && element.parentID > 0) {
           store.toggleIsCollapsed(element.parentID, false);
         }

@@ -7,10 +7,13 @@
  * @flow
  */
 
+import Symbol from 'es6-symbol';
 import LRU from 'lru-cache';
 import {
   isElement,
   typeOf,
+  AsyncMode,
+  ConcurrentMode,
   ContextConsumer,
   ContextProvider,
   ForwardRef,
@@ -49,7 +52,7 @@ const cachedDisplayNames: WeakMap<Function, string> = new WeakMap();
 
 // On large trees, encoding takes significant time.
 // Try to reuse the already encoded strings.
-const encodedStringCache = new LRU({max: 1000});
+let encodedStringCache = new LRU({max: 1000});
 
 export function alphaSortKeys(a: string, b: string): number {
   if (a > b) {
@@ -96,7 +99,7 @@ export function utfDecodeString(array: Array<number>): string {
 }
 
 export function utfEncodeString(string: string): Array<number> {
-  const cached = encodedStringCache.get(string);
+  let cached = encodedStringCache.get(string);
   if (cached !== undefined) {
     return cached;
   }
@@ -275,32 +278,18 @@ export function separateDisplayNameAndHOCs(
       break;
   }
 
-  if (type === ElementTypeMemo) {
-    if (hocDisplayNames === null) {
-      hocDisplayNames = ['Memo'];
-    } else {
-      hocDisplayNames.unshift('Memo');
-    }
-  } else if (type === ElementTypeForwardRef) {
-    if (hocDisplayNames === null) {
-      hocDisplayNames = ['ForwardRef'];
-    } else {
-      hocDisplayNames.unshift('ForwardRef');
-    }
-  }
-
   return [displayName, hocDisplayNames];
 }
 
 // Pulled from react-compat
 // https://github.com/developit/preact-compat/blob/7c5de00e7c85e2ffd011bf3af02899b63f699d3a/src/index.js#L349
 export function shallowDiffers(prev: Object, next: Object): boolean {
-  for (const attribute in prev) {
+  for (let attribute in prev) {
     if (!(attribute in next)) {
       return true;
     }
   }
-  for (const attribute in next) {
+  for (let attribute in next) {
     if (prev[attribute] !== next[attribute]) {
       return true;
     }
@@ -436,6 +425,9 @@ export function getDisplayNameForReactElement(
 ): string | null {
   const elementType = typeOf(element);
   switch (elementType) {
+    case AsyncMode:
+    case ConcurrentMode:
+      return 'ConcurrentMode';
     case ContextConsumer:
       return 'ContextConsumer';
     case ContextProvider:

@@ -3,69 +3,38 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *
- * @flow
  */
-
-import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
-import type {ReactScopeInstance} from 'shared/ReactTypes';
-import type {ReactDOMEventHandleListener} from '../shared/ReactDOMTypes';
-import type {
-  Container,
-  TextInstance,
-  Instance,
-  SuspenseInstance,
-  Props,
-} from './ReactDOMHostConfig';
-import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
 
 import {
   HostComponent,
   HostText,
   HostRoot,
   SuspenseComponent,
-} from 'react-reconciler/src/ReactWorkTags';
+} from 'shared/ReactWorkTags';
+import invariant from 'shared/invariant';
 
 import {getParentSuspenseInstance} from './ReactDOMHostConfig';
-
-import invariant from 'shared/invariant';
-import {enableScopeAPI} from 'shared/ReactFeatureFlags';
 
 const randomKey = Math.random()
   .toString(36)
   .slice(2);
-const internalInstanceKey = '__reactFiber$' + randomKey;
-const internalPropsKey = '__reactProps$' + randomKey;
-const internalContainerInstanceKey = '__reactContainer$' + randomKey;
-const internalEventHandlersKey = '__reactEvents$' + randomKey;
-const internalEventHandlerListenersKey = '__reactListeners$' + randomKey;
+const internalInstanceKey = '__reactInternalInstance$' + randomKey;
+const internalEventHandlersKey = '__reactEventHandlers$' + randomKey;
+const internalContainerInstanceKey = '__reactContainere$' + randomKey;
 
-export type ElementListenerMap = Map<
-  DOMTopLevelEventType | string,
-  ElementListenerMapEntry,
->;
-
-export type ElementListenerMapEntry = {
-  passive: void | boolean,
-  listener: any => void,
-};
-
-export function precacheFiberNode(
-  hostInst: Fiber,
-  node: Instance | TextInstance | SuspenseInstance | ReactScopeInstance,
-): void {
-  (node: any)[internalInstanceKey] = hostInst;
+export function precacheFiberNode(hostInst, node) {
+  node[internalInstanceKey] = hostInst;
 }
 
-export function markContainerAsRoot(hostRoot: Fiber, node: Container): void {
+export function markContainerAsRoot(hostRoot, node) {
   node[internalContainerInstanceKey] = hostRoot;
 }
 
-export function unmarkContainerAsRoot(node: Container): void {
+export function unmarkContainerAsRoot(node) {
   node[internalContainerInstanceKey] = null;
 }
 
-export function isContainerMarkedAsRoot(node: Container): boolean {
+export function isContainerMarkedAsRoot(node) {
   return !!node[internalContainerInstanceKey];
 }
 
@@ -76,8 +45,8 @@ export function isContainerMarkedAsRoot(node: Container): boolean {
 // pass the Container node as the targetNode, you will not actually get the
 // HostRoot back. To get to the HostRoot, you need to pass a child of it.
 // The same thing applies to Suspense boundaries.
-export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
-  let targetInst = (targetNode: any)[internalInstanceKey];
+export function getClosestInstanceFromNode(targetNode) {
+  let targetInst = targetNode[internalInstanceKey];
   if (targetInst) {
     // Don't return HostRoot or SuspenseComponent here.
     return targetInst;
@@ -95,8 +64,8 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
     // node and the first child. It isn't surrounding the container node.
     // If it's not a container, we check if it's an instance.
     targetInst =
-      (parentNode: any)[internalContainerInstanceKey] ||
-      (parentNode: any)[internalInstanceKey];
+      parentNode[internalContainerInstanceKey] ||
+      parentNode[internalInstanceKey];
     if (targetInst) {
       // Since this wasn't the direct target of the event, we might have
       // stepped past dehydrated DOM nodes to get here. However they could
@@ -129,7 +98,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
           // have had an internalInstanceKey on it.
           // Let's get the fiber associated with the SuspenseComponent
           // as the deepest instance.
-          const targetSuspenseInst = suspenseInstance[internalInstanceKey];
+          let targetSuspenseInst = suspenseInstance[internalInstanceKey];
           if (targetSuspenseInst) {
             return targetSuspenseInst;
           }
@@ -155,10 +124,8 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
  * Given a DOM node, return the ReactDOMComponent or ReactDOMTextComponent
  * instance, or null if the node was not rendered by this React.
  */
-export function getInstanceFromNode(node: Node): Fiber | null {
-  const inst =
-    (node: any)[internalInstanceKey] ||
-    (node: any)[internalContainerInstanceKey];
+export function getInstanceFromNode(node) {
+  const inst = node[internalInstanceKey] || node[internalContainerInstanceKey];
   if (inst) {
     if (
       inst.tag === HostComponent ||
@@ -178,7 +145,7 @@ export function getInstanceFromNode(node: Node): Fiber | null {
  * Given a ReactDOMComponent or ReactDOMTextComponent, return the corresponding
  * DOM node.
  */
-export function getNodeFromInstance(inst: Fiber): Instance | TextInstance {
+export function getNodeFromInstance(inst) {
   if (inst.tag === HostComponent || inst.tag === HostText) {
     // In Fiber this, is just the state node right now. We assume it will be
     // a host component or host text.
@@ -190,45 +157,10 @@ export function getNodeFromInstance(inst: Fiber): Instance | TextInstance {
   invariant(false, 'getNodeFromInstance: Invalid argument.');
 }
 
-export function getFiberCurrentPropsFromNode(
-  node: Instance | TextInstance | SuspenseInstance,
-): Props {
-  return (node: any)[internalPropsKey] || null;
+export function getFiberCurrentPropsFromNode(node) {
+  return node[internalEventHandlersKey] || null;
 }
 
-export function updateFiberProps(
-  node: Instance | TextInstance | SuspenseInstance,
-  props: Props,
-): void {
-  (node: any)[internalPropsKey] = props;
-}
-
-export function getEventListenerMap(node: EventTarget): ElementListenerMap {
-  let elementListenerMap = (node: any)[internalEventHandlersKey];
-  if (elementListenerMap === undefined) {
-    elementListenerMap = (node: any)[internalEventHandlersKey] = new Map();
-  }
-  return elementListenerMap;
-}
-
-export function getFiberFromScopeInstance(
-  scope: ReactScopeInstance,
-): null | Fiber {
-  if (enableScopeAPI) {
-    return (scope: any)[internalInstanceKey] || null;
-  }
-  return null;
-}
-
-export function setEventHandlerListeners(
-  scope: EventTarget | ReactScopeInstance,
-  listeners: Set<ReactDOMEventHandleListener>,
-): void {
-  (scope: any)[internalEventHandlerListenersKey] = listeners;
-}
-
-export function getEventHandlerListeners(
-  scope: EventTarget | ReactScopeInstance,
-): null | Set<ReactDOMEventHandleListener> {
-  return (scope: any)[internalEventHandlerListenersKey] || null;
+export function updateFiberProps(node, props) {
+  node[internalEventHandlersKey] = props;
 }

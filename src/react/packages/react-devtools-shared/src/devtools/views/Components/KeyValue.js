@@ -217,7 +217,7 @@ export default function KeyValue({
       const hasChildren = entries.length > 0;
       const displayName = getMetaValueLabel(value);
 
-      const areChildrenReadOnly = isReadOnly || !!value[meta.readonly];
+      let areChildrenReadOnly = isReadOnly || !!value[meta.readonly];
       children = entries.map<Element<any>>(([key, keyValue]) => (
         <KeyValue
           key={key}

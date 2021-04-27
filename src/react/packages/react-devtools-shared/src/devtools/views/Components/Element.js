@@ -137,17 +137,11 @@ export default function ElementView({data, index, style}: Props) {
             "
           </Fragment>
         )}
-        {hocDisplayNames !== null && hocDisplayNames.length > 0 ? (
-          <Badge
-            className={styles.Badge}
-            hocDisplayNames={hocDisplayNames}
-            type={type}>
-            <DisplayName
-              displayName={hocDisplayNames[0]}
-              id={((id: any): number)}
-            />
-          </Badge>
-        ) : null}
+        <Badge
+          className={styles.Badge}
+          hocDisplayNames={hocDisplayNames}
+          type={type}
+        />
       </div>
     </div>
   );

@@ -8,10 +8,12 @@
  */
 
 import type {Container} from './ReactDOMHostConfig';
-import type {RootTag} from 'react-reconciler/src/ReactRootTags';
+import type {RootTag} from 'shared/ReactRootTags';
 import type {ReactNodeList} from 'shared/ReactTypes';
-import type {FiberRoot} from 'react-reconciler/src/ReactInternalTypes';
-import {findHostInstanceWithNoPortals} from 'react-reconciler/src/ReactFiberReconciler';
+// TODO: This type is shared between the reconciler and ReactDOM, but will
+// eventually be lifted out to the renderer.
+import type {FiberRoot} from 'react-reconciler/src/ReactFiberRoot';
+import {findHostInstanceWithNoPortals} from 'react-reconciler/inline.dom';
 
 export type RootType = {
   render(children: ReactNodeList): void,
@@ -42,20 +44,10 @@ import {
   DOCUMENT_NODE,
   DOCUMENT_FRAGMENT_NODE,
 } from '../shared/HTMLNodeType';
-import {ensureListeningTo} from './ReactDOMComponent';
 
-import {
-  createContainer,
-  updateContainer,
-} from 'react-reconciler/src/ReactFiberReconciler';
+import {createContainer, updateContainer} from 'react-reconciler/inline.dom';
 import invariant from 'shared/invariant';
-import {
-  BlockingRoot,
-  ConcurrentRoot,
-  LegacyRoot,
-} from 'react-reconciler/src/ReactRootTags';
-
-import {enableModernEventSystem} from 'shared/ReactFeatureFlags';
+import {BlockingRoot, ConcurrentRoot, LegacyRoot} from 'shared/ReactRootTags';
 
 function ReactDOMRoot(container: Container, options: void | RootOptions) {
   this._internalRoot = createRootImpl(container, ConcurrentRoot, options);
@@ -66,9 +58,7 @@ function ReactDOMBlockingRoot(
   tag: RootTag,
   options: void | RootOptions,
 ) {
-  console.log('%cReactDOMBlockingRoot', 'font-size:14px;color:green;');
   this._internalRoot = createRootImpl(container, tag, options);
-  console.log('%cReactDOMBlockingRoot', 'font-size:14px;color:pink;', this._internalRoot);
 }
 
 ReactDOMRoot.prototype.render = ReactDOMBlockingRoot.prototype.render = function(
@@ -122,32 +112,19 @@ function createRootImpl(
   tag: RootTag,
   options: void | RootOptions,
 ) {
-  console.log('%ccreateRootImpl', 'font-size:14px;color:green;');
   // Tag is either LegacyRoot or Concurrent Root
   const hydrate = options != null && options.hydrate === true;
   const hydrationCallbacks =
     (options != null && options.hydrationOptions) || null;
   const root = createContainer(container, tag, hydrate, hydrationCallbacks);
   markContainerAsRoot(root.current, container);
-  const containerNodeType = container.nodeType;
-
   if (hydrate && tag !== LegacyRoot) {
     const doc =
-      containerNodeType === DOCUMENT_NODE ? container : container.ownerDocument;
-    // We need to cast this because Flow doesn't work
-    // with the hoisted containerNodeType. If we inline
-    // it, then Flow doesn't complain. We intentionally
-    // hoist it to reduce code-size.
-    eagerlyTrapReplayableEvents(container, ((doc: any): Document));
-  } else if (
-    enableModernEventSystem &&
-    containerNodeType !== DOCUMENT_FRAGMENT_NODE &&
-    containerNodeType !== DOCUMENT_NODE
-  ) {
-    ensureListeningTo(container, 'onMouseEnter');
+      container.nodeType === DOCUMENT_NODE
+        ? container
+        : container.ownerDocument;
+    eagerlyTrapReplayableEvents(container, doc);
   }
-  
-  console.log('%ccreateRootImpl', 'font-size:14px;color:pink;', root);
   return root;
 }
 
@@ -179,10 +156,7 @@ export function createLegacyRoot(
   container: Container,
   options?: RootOptions,
 ): RootType {
-  console.log('%ccreatLegacyRoot', 'color:green;');
-  const a =  new ReactDOMBlockingRoot(container, LegacyRoot, options);
-  console.log('%ccreatLegacyRoot', 'color:pink;', a);a
-  return a;
+  return new ReactDOMBlockingRoot(container, LegacyRoot, options);
 }
 
 export function isValidContainer(node: mixed): boolean {

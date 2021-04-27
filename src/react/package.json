@@ -56,19 +56,19 @@
     "eslint-plugin-no-for-of-loops": "^1.0.0",
     "eslint-plugin-react": "^6.7.1",
     "eslint-plugin-react-internal": "link:./scripts/eslint-rules",
-    "fbjs-scripts": "1.2.0",
+    "fbjs-scripts": "0.8.3",
     "filesize": "^6.0.1",
     "flow-bin": "0.97",
     "glob": "^7.1.6",
     "glob-stream": "^6.1.0",
-    "google-closure-compiler": "^20200224.0.0",
+    "google-closure-compiler": "^20200112.0.0",
     "gzip-size": "^5.1.1",
     "jasmine-check": "^1.0.0-rc.0",
-    "jest": "^25.2.7",
-    "jest-diff": "^25.2.6",
+    "jest": "^25.1.0",
+    "jest-diff": "^25.1.0",
     "jest-snapshot-serializer-raw": "^1.1.0",
     "minimatch": "^3.0.4",
-    "minimist": "^1.2.3",
+    "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "ncp": "^2.0.0",
     "object-assign": "^4.1.1",
@@ -93,14 +93,14 @@
     "webpack": "^4.41.2"
   },
   "devEngines": {
-    "node": "8.x || 9.x || 10.x || 11.x || 12.x || 13.x || 14.x"
+    "node": "8.x || 9.x || 10.x || 11.x || 12.x || 13.x"
   },
   "jest": {
     "testRegex": "/scripts/jest/dont-run-jest-directly\\.js$"
   },
   "scripts": {
     "build": "node ./scripts/rollup/build.js",
-    "build-for-devtools": "cross-env RELEASE_CHANNEL=experimental yarn build react/index,react-dom,react-is,react-debug-tools,scheduler,react-test-renderer --type=NODE",
+    "build-for-devtools": "cross-env RELEASE_CHANNEL=experimental yarn build -- react/index,react-dom,react-is,react-debug-tools,scheduler,react-test-renderer --type=NODE",
     "linc": "node ./scripts/tasks/linc.js",
     "lint": "node ./scripts/tasks/eslint.js",
     "lint-build": "node ./scripts/rollup/validate/index.js",
@@ -108,14 +108,9 @@
     "postinstall": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json && node ./scripts/flow/createFlowConfigs.js && node ./scripts/yarn/downloadReactIsForPrettyFormat.js",
     "debug-test": "cross-env NODE_ENV=development node --inspect-brk node_modules/jest/bin/jest.js --config ./scripts/jest/config.source.js --runInBand",
     "test": "cross-env NODE_ENV=development jest --config ./scripts/jest/config.source.js",
-    "test-www": "cross-env NODE_ENV=development jest --config ./scripts/jest/config.source-www.js",
-    "test-www-variant": "cross-env NODE_ENV=development VARIANT=true jest --config ./scripts/jest/config.source-www.js",
-    "test-prod-www": "cross-env NODE_ENV=production jest --config ./scripts/jest/config.source-www.js",
-    "test-prod-www-variant": "cross-env NODE_ENV=production VARIANT=true jest --config ./scripts/jest/config.source-www.js",
     "test-persistent": "cross-env NODE_ENV=development jest --config ./scripts/jest/config.source-persistent.js",
     "debug-test-persistent": "cross-env NODE_ENV=development node --inspect-brk node_modules/jest/bin/jest.js --config ./scripts/jest/config.source-persistent.js --runInBand",
     "test-prod": "cross-env NODE_ENV=production jest --config ./scripts/jest/config.source.js",
-    "debug-test-prod": "cross-env NODE_ENV=production node --inspect-brk node_modules/jest/bin/jest.js --config ./scripts/jest/config.source.js --runInBand",
     "test-prod-build": "yarn test-build-prod",
     "test-build": "cross-env NODE_ENV=development jest --config ./scripts/jest/config.build.js",
     "test-build-prod": "cross-env NODE_ENV=production jest --config ./scripts/jest/config.build.js",
@@ -126,7 +121,6 @@
     "flow-ci": "node ./scripts/tasks/flow-ci.js",
     "prettier": "node ./scripts/prettier/index.js write-changed",
     "prettier-all": "node ./scripts/prettier/index.js write",
-    "version-check": "node ./scripts/tasks/version-check.js",
-    "merge-fork": "node ./scripts/merge-fork/merge-fork.js"
+    "version-check": "node ./scripts/tasks/version-check.js"
   }
 }

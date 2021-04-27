@@ -22,7 +22,7 @@ import {
   REACT_ELEMENT_TYPE,
 } from 'shared/ReactSymbols';
 import {warnAboutSpreadingKeyToJSX} from 'shared/ReactFeatureFlags';
-import checkPropTypes from 'shared/checkPropTypes';
+import checkPropTypes from 'prop-types/checkPropTypes';
 
 import ReactCurrentOwner from './ReactCurrentOwner';
 import {
@@ -31,24 +31,9 @@ import {
   cloneElement,
   jsxDEV,
 } from './ReactElement';
-import {setExtraStackFrame} from './ReactDebugCurrentFrame';
-import {describeUnknownElementTypeFrameInDEV} from 'shared/ReactComponentStackFrame';
-
-function setCurrentlyValidatingElement(element) {
-  if (__DEV__) {
-    if (element) {
-      const owner = element._owner;
-      const stack = describeUnknownElementTypeFrameInDEV(
-        element.type,
-        element._source,
-        owner ? owner.type : null,
-      );
-      setExtraStackFrame(stack);
-    } else {
-      setExtraStackFrame(null);
-    }
-  }
-}
+import ReactDebugCurrentFrame, {
+  setCurrentlyValidatingElement,
+} from './ReactDebugCurrentFrame';
 
 let propTypesMisspellWarningShown;
 
@@ -144,16 +129,16 @@ function validateExplicitKey(element, parentType) {
     )}.`;
   }
 
+  setCurrentlyValidatingElement(element);
   if (__DEV__) {
-    setCurrentlyValidatingElement(element);
     console.error(
       'Each child in a list should have a unique "key" prop.' +
         '%s%s See https://fb.me/react-warning-keys for more information.',
       currentComponentErrorInfo,
       childOwner,
     );
-    setCurrentlyValidatingElement(null);
   }
+  setCurrentlyValidatingElement(null);
 }
 
 /**
@@ -228,7 +213,13 @@ function validatePropTypes(element) {
     }
     if (propTypes) {
       setCurrentlyValidatingElement(element);
-      checkPropTypes(propTypes, element.props, 'prop', name);
+      checkPropTypes(
+        propTypes,
+        element.props,
+        'prop',
+        name,
+        ReactDebugCurrentFrame.getStackAddendum,
+      );
       setCurrentlyValidatingElement(null);
     } else if (type.PropTypes !== undefined && !propTypesMisspellWarningShown) {
       propTypesMisspellWarningShown = true;

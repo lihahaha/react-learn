@@ -7,8 +7,6 @@
  * @flow
  */
 
-import type {TouchedViewDataAtPoint} from './ReactNativeTypes';
-
 import invariant from 'shared/invariant';
 
 // Modules provided by RN:
@@ -43,18 +41,6 @@ export type ChildSet = void; // Unused
 
 export type TimeoutHandle = TimeoutID;
 export type NoTimeout = -1;
-export type OpaqueIDType = void;
-
-export type RendererInspectionConfig = $ReadOnly<{|
-  // Deprecated. Replaced with getInspectorDataForViewAtPoint.
-  getInspectorDataForViewTag?: (tag: number) => Object,
-  getInspectorDataForViewAtPoint?: (
-    inspectedView: Object,
-    locationX: number,
-    locationY: number,
-    callback: (viewData: TouchedViewDataAtPoint) => mixed,
-  ) => void,
-|}>;
 
 const UPDATE_SIGNAL = {};
 if (__DEV__) {
@@ -85,10 +71,8 @@ function recursivelyUncacheFiberNode(node: Instance | TextInstance) {
   }
 }
 
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoPersistence';
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoHydration';
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoScopes';
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoTestSelectors';
+export * from 'shared/HostConfigWithNoPersistence';
+export * from 'shared/HostConfigWithNoHydration';
 
 export function appendInitialChild(
   parentInstance: Instance,
@@ -124,11 +108,7 @@ export function createInstance(
     updatePayload, // props
   );
 
-  const component = new ReactNativeFiberHostComponent(
-    tag,
-    viewConfig,
-    internalInstanceHandle,
-  );
+  const component = new ReactNativeFiberHostComponent(tag, viewConfig);
 
   precacheFiberNode(internalInstanceHandle, tag);
   updateFiberProps(tag, props);
@@ -221,9 +201,8 @@ export function getPublicInstance(instance: Instance): * {
   return instance;
 }
 
-export function prepareForCommit(containerInfo: Container): null | Object {
+export function prepareForCommit(containerInfo: Container): void {
   // Noop
-  return null;
 }
 
 export function prepareUpdate(
@@ -484,11 +463,6 @@ export function unhideInstance(instance: Instance, props: Props): void {
   );
 }
 
-export function clearContainer(container: Container): void {
-  // TODO Implement this for React Native
-  // UIManager does not expose a "remove all" type method.
-}
-
 export function unhideTextInstance(
   textInstance: TextInstance,
   text: string,
@@ -536,36 +510,6 @@ export function getInstanceFromNode(node: any) {
   throw new Error('Not yet implemented.');
 }
 
-export function removeInstanceEventHandles(instance: any) {
-  // noop
-}
-
-export function isOpaqueHydratingObject(value: mixed): boolean {
-  throw new Error('Not yet implemented');
-}
-
-export function makeOpaqueHydratingObject(
-  attemptToReadValue: () => void,
-): OpaqueIDType {
-  throw new Error('Not yet implemented.');
-}
-
-export function makeClientId(): OpaqueIDType {
-  throw new Error('Not yet implemented');
-}
-
-export function makeClientIdInDEV(warnOnAccessInDEV: () => void): OpaqueIDType {
-  throw new Error('Not yet implemented');
-}
-
-export function beforeActiveInstanceBlur() {
-  // noop
-}
-
-export function afterActiveInstanceBlur() {
-  // noop
-}
-
-export function preparePortalMount(portalInstance: Instance): void {
+export function beforeRemoveInstance(instance: any) {
   // noop
 }

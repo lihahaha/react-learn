@@ -87,7 +87,7 @@ function getElementType(internalInstance: InternalInstance): ElementType {
 }
 
 function getChildren(internalInstance: Object): Array<any> {
-  const children = [];
+  let children = [];
 
   // If the parent is a native node without rendered children, but with
   // multiple string children, then the `element` that gets passed in here is
@@ -106,7 +106,7 @@ function getChildren(internalInstance: Object): Array<any> {
     }
   } else if (internalInstance._renderedChildren) {
     const renderedChildren = internalInstance._renderedChildren;
-    for (const name in renderedChildren) {
+    for (let name in renderedChildren) {
       const child = renderedChildren[name];
       if (getElementType(child) !== ElementTypeOtherOrUnknown) {
         children.push(child);
@@ -386,8 +386,8 @@ export function attach(
           ? getID(internalInstance._currentElement._owner)
           : 0;
 
-      const displayNameStringID = getStringID(displayName);
-      const keyStringID = getStringID(key);
+      let displayNameStringID = getStringID(displayName);
+      let keyStringID = getStringID(key);
       pushOperation(TREE_OPERATION_ADD);
       pushOperation(id);
       pushOperation(type);
@@ -447,7 +447,7 @@ export function attach(
       renderer.Mount._instancesByReactRootID ||
       renderer.Mount._instancesByContainerID;
 
-    for (const key in roots) {
+    for (let key in roots) {
       const internalInstance = roots[key];
       const id = getID(internalInstance);
       crawlAndRecordInitialMounts(id, 0, id);
@@ -455,8 +455,8 @@ export function attach(
     }
   }
 
-  const pendingOperations: Array<number> = [];
-  const pendingStringTable: Map<string, number> = new Map();
+  let pendingOperations: Array<number> = [];
+  let pendingStringTable: Map<string, number> = new Map();
   let pendingUnmountedIDs: Array<number> = [];
   let pendingStringTableLength: number = 0;
   let pendingUnmountedRootID: number | null = null;
@@ -731,7 +731,7 @@ export function attach(
       return null;
     }
 
-    const {displayName, key} = getData(internalInstance);
+    const {displayName} = getData(internalInstance);
     const type = getElementType(internalInstance);
 
     let context = null;
@@ -788,8 +788,6 @@ export function attach(
       displayName: displayName,
 
       type: type,
-
-      key: key != null ? key : null,
 
       // Inspectable properties.
       context,

@@ -21,7 +21,7 @@ const useForks = require('./plugins/use-forks-plugin');
 const stripUnusedImports = require('./plugins/strip-unused-imports');
 const extractErrorCodes = require('../error-codes/extract-errors');
 const Packaging = require('./packaging');
-const {asyncRimRaf} = require('./utils');
+const {asyncCopyTo, asyncRimRaf} = require('./utils');
 const codeFrame = require('babel-code-frame');
 const Wrappers = require('./wrappers');
 
@@ -97,7 +97,7 @@ const errorCodeOpts = {
 
 const closureOptions = {
   compilation_level: 'SIMPLE',
-  language_in: 'ECMASCRIPT_2015',
+  language_in: 'ECMASCRIPT5_STRICT',
   language_out: 'ECMASCRIPT5_STRICT',
   env: 'CUSTOM',
   warning_level: 'QUIET',
@@ -105,40 +105,7 @@ const closureOptions = {
   use_types_for_optimization: false,
   process_common_js_modules: false,
   rewrite_polyfills: false,
-  inject_libraries: false,
 };
-
-// Non-ES2015 stuff applied before closure compiler.
-const babelPlugins = [
-  // These plugins filter out non-ES2015.
-  '@babel/plugin-transform-flow-strip-types',
-  ['@babel/plugin-proposal-class-properties', {loose: true}],
-  'syntax-trailing-function-commas',
-  // These use loose mode which avoids embedding a runtime.
-  // TODO: Remove object spread from the source. Prefer Object.assign instead.
-  [
-    '@babel/plugin-proposal-object-rest-spread',
-    {loose: true, useBuiltIns: true},
-  ],
-  ['@babel/plugin-transform-template-literals', {loose: true}],
-  // TODO: Remove for...of from the source. It requires a runtime to be embedded.
-  '@babel/plugin-transform-for-of',
-  // TODO: Remove array spread from the source. Prefer .apply instead.
-  ['@babel/plugin-transform-spread', {loose: true, useBuiltIns: true}],
-  '@babel/plugin-transform-parameters',
-  // TODO: Remove array destructuring from the source. Requires runtime.
-  ['@babel/plugin-transform-destructuring', {loose: true, useBuiltIns: true}],
-];
-
-const babelToES5Plugins = [
-  // These plugins transform DEV mode. Closure compiler deals with these in PROD.
-  '@babel/plugin-transform-literals',
-  '@babel/plugin-transform-arrow-functions',
-  '@babel/plugin-transform-block-scoped-functions',
-  '@babel/plugin-transform-shorthand-properties',
-  '@babel/plugin-transform-computed-properties',
-  ['@babel/plugin-transform-block-scoping', {throwIfClosureRequired: true}],
-];
 
 function getBabelConfig(
   updateBabelOptions,
@@ -151,14 +118,11 @@ function getBabelConfig(
     packageName === 'react' || externals.indexOf('react') !== -1;
   let options = {
     exclude: '/**/node_modules/**',
-    babelrc: false,
-    configFile: false,
     presets: [],
-    plugins: [...babelPlugins],
+    plugins: [],
   };
   if (isDevelopment) {
     options.plugins.push(
-      ...babelToES5Plugins,
       // Turn console.error/warn() into a custom wrapper
       [
         require('../babel/transform-replace-console-calls'),
@@ -260,7 +224,7 @@ function getFormat(bundleType) {
 
 function getFilename(name, globalName, bundleType) {
   // we do this to replace / to -, for react-dom/server
-  name = name.replace('/index.', '.').replace('/', '-');
+  name = name.replace('/', '-');
   switch (bundleType) {
     case UMD_DEV:
       return `${name}.development.js`;
@@ -360,11 +324,10 @@ function getPlugins(
   bundleType,
   globalName,
   moduleType,
-  pureExternalModules,
-  bundle
+  pureExternalModules
 ) {
   const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
-  const forks = Modules.getForks(bundleType, entry, moduleType, bundle);
+  const forks = Modules.getForks(bundleType, entry, moduleType);
   const isProduction = isProductionBundleType(bundleType);
   const isProfiling = isProfilingBundleType(bundleType);
   const isUMDBundle =
@@ -405,7 +368,7 @@ function getPlugins(
     stripBanner({
       exclude: 'node_modules/**/*',
     }),
-    // Compile to ES2015.
+    // Compile to ES5.
     babel(
       getBabelConfig(
         updateBabelOptions,
@@ -428,14 +391,9 @@ function getPlugins(
       __UMD__: isUMDBundle ? 'true' : 'false',
       'process.env.NODE_ENV': isProduction ? "'production'" : "'development'",
       __EXPERIMENTAL__,
-      // Enable forked reconciler.
-      // NOTE: I did not put much thought into how to configure this.
-      __VARIANT__: bundle.enableNewReconciler === true,
     }),
-    // The CommonJS plugin *only* exists to pull "art" into "react-art".
-    // I'm going to port "art" to ES modules to avoid this problem.
-    // Please don't enable this for anything else!
-    isUMDBundle && entry === 'react-art' && commonjs(),
+    // We still need CommonJS for external deps like object-assign.
+    commonjs(),
     // Apply dead code elimination and/or minification.
     isProduction &&
       closure(
@@ -617,8 +575,7 @@ async function createBundle(bundle, bundleType) {
       bundleType,
       bundle.global,
       bundle.moduleType,
-      pureExternalModules,
-      bundle
+      pureExternalModules
     ),
     output: {
       externalLiveBindings: false,
@@ -627,7 +584,7 @@ async function createBundle(bundle, bundleType) {
       esModule: false,
     },
   };
-  const mainOutputPath = Packaging.getBundleOutputPath(
+  const [mainOutputPath, ...otherOutputPaths] = Packaging.getBundleOutputPaths(
     bundleType,
     filename,
     packageName
@@ -649,6 +606,9 @@ async function createBundle(bundle, bundleType) {
           console.log(`${chalk.bgYellow.black(' BUILDING ')} ${logKey}`);
           break;
         case 'BUNDLE_END':
+          for (let i = 0; i < otherOutputPaths.length; i++) {
+            await asyncCopyTo(mainOutputPath, otherOutputPaths[i]);
+          }
           console.log(`${chalk.bgGreen.black(' COMPLETE ')} ${logKey}\n`);
           break;
         case 'ERROR':
@@ -667,6 +627,9 @@ async function createBundle(bundle, bundleType) {
       console.log(`${chalk.bgRed.black(' OH NOES! ')} ${logKey}\n`);
       handleRollupError(error);
       throw error;
+    }
+    for (let i = 0; i < otherOutputPaths.length; i++) {
+      await asyncCopyTo(mainOutputPath, otherOutputPaths[i]);
     }
     console.log(`${chalk.bgGreen.black(' COMPLETE ')} ${logKey}\n`);
   }

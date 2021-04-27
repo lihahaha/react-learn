@@ -8,42 +8,27 @@
  * @flow
  */
 
-import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
+import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {EventPriority} from 'shared/ReactTypes';
 import type {TopLevelType} from './TopLevelEventTypes';
 
 export type DispatchConfig = {|
-  dependencies?: Array<TopLevelType>,
-  phasedRegistrationNames: {|
-    bubbled: null | string,
-    captured: null | string,
+  dependencies: Array<TopLevelType>,
+  phasedRegistrationNames?: {|
+    bubbled: string,
+    captured: string,
   |},
   registrationName?: string,
   eventPriority: EventPriority,
 |};
 
-export type CustomDispatchConfig = {|
-  phasedRegistrationNames: {|
-    bubbled: null,
-    captured: null,
-  |},
-  registrationName?: string,
-  customEvent: true,
-|};
-
 export type ReactSyntheticEvent = {|
-  dispatchConfig: DispatchConfig | CustomDispatchConfig,
+  dispatchConfig: DispatchConfig,
   getPooled: (
-    dispatchConfig: DispatchConfig | CustomDispatchConfig,
+    dispatchConfig: DispatchConfig,
     targetInst: Fiber,
     nativeTarget: Event,
     nativeEventTarget: EventTarget,
   ) => ReactSyntheticEvent,
   isPersistent: () => boolean,
-  isPropagationStopped: () => boolean,
-  _dispatchInstances?: null | Array<Fiber | null> | Fiber,
-  _dispatchListeners?: null | Array<Function> | Function,
-  _targetInst: Fiber,
-  type: string,
-  currentTarget: null | EventTarget,
 |};

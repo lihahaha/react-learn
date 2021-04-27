@@ -28,13 +28,8 @@ function initializeModules(hasPointerEvents) {
   ReactFeatureFlags.enableDeprecatedFlareAPI = true;
   React = require('react');
   ReactDOM = require('react-dom');
-
-  // TODO: This import throws outside of experimental mode. Figure out better
-  // strategy for gated imports.
-  if (__EXPERIMENTAL__) {
-    useContextMenu = require('react-interactions/events/context-menu')
-      .useContextMenu;
-  }
+  useContextMenu = require('react-interactions/events/context-menu')
+    .useContextMenu;
 }
 
 const forcePointerEvents = true;
@@ -42,6 +37,11 @@ const table = [[forcePointerEvents], [!forcePointerEvents]];
 
 describe.each(table)('ContextMenu responder', hasPointerEvents => {
   let container;
+
+  if (!__EXPERIMENTAL__) {
+    it("empty test so Jest doesn't complain", () => {});
+    return;
+  }
 
   beforeEach(() => {
     initializeModules(hasPointerEvents);
@@ -56,7 +56,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
   });
 
   describe('all platforms', () => {
-    // @gate experimental
     it('mouse right-click', () => {
       const onContextMenu = jest.fn();
       const preventDefault = jest.fn();
@@ -80,7 +79,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
       );
     });
 
-    // @gate experimental
     it('touch long-press', () => {
       const onContextMenu = jest.fn();
       const preventDefault = jest.fn();
@@ -104,7 +102,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
       );
     });
 
-    // @gate experimental
     it('"disabled" is true', () => {
       const onContextMenu = jest.fn();
       const ref = React.createRef();
@@ -122,7 +119,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
       expect(onContextMenu).toHaveBeenCalledTimes(0);
     });
 
-    // @gate experimental
     it('"preventDefault" is false', () => {
       const preventDefault = jest.fn();
       const onContextMenu = jest.fn();
@@ -153,7 +149,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
       platform.clear();
     });
 
-    // @gate experimental
     it('mouse modified left-click', () => {
       const onContextMenu = jest.fn();
       const ref = React.createRef();
@@ -186,7 +181,6 @@ describe.each(table)('ContextMenu responder', hasPointerEvents => {
       platform.clear();
     });
 
-    // @gate experimental
     it('mouse modified left-click', () => {
       const onContextMenu = jest.fn();
       const ref = React.createRef();

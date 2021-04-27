@@ -121,7 +121,7 @@ if (
 
   // TODO: Make this configurable
   // TODO: Adjust this based on priority?
-  const maxYieldInterval = 300;
+  let maxYieldInterval = 300;
   let needsPaint = false;
 
   if (

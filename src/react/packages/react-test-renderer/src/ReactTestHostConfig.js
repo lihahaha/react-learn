@@ -14,7 +14,6 @@ import type {
 } from 'shared/ReactTypes';
 
 import {enableDeprecatedFlareAPI} from 'shared/ReactFeatureFlags';
-import {REACT_OPAQUE_ID_TYPE} from 'shared/ReactSymbols';
 
 export type Type = string;
 export type Props = Object;
@@ -45,18 +44,9 @@ export type ChildSet = void; // Unused
 export type TimeoutHandle = TimeoutID;
 export type NoTimeout = -1;
 export type EventResponder = any;
-export opaque type OpaqueIDType =
-  | string
-  | {
-      toString: () => string | void,
-      valueOf: () => string | void,
-    };
 
-export type RendererInspectionConfig = $ReadOnly<{||}>;
-
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoPersistence';
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoHydration';
-export * from 'react-reconciler/src/ReactFiberHostConfigWithNoTestSelectors';
+export * from 'shared/HostConfigWithNoPersistence';
+export * from 'shared/HostConfigWithNoHydration';
 
 const EVENT_COMPONENT_CONTEXT = {};
 const NO_CONTEXT = {};
@@ -127,10 +117,6 @@ export function removeChild(
   parentInstance.children.splice(index, 1);
 }
 
-export function clearContainer(container: Container): void {
-  container.children.splice(0);
-}
-
 export function getRootHostContext(
   rootContainerInstance: Container,
 ): HostContext {
@@ -145,9 +131,8 @@ export function getChildHostContext(
   return NO_CONTEXT;
 }
 
-export function prepareForCommit(containerInfo: Container): null | Object {
+export function prepareForCommit(containerInfo: Container): void {
   // noop
-  return null;
 }
 
 export function resetAfterCommit(containerInfo: Container): void {
@@ -387,67 +372,6 @@ export function getInstanceFromNode(mockNode: Object) {
   return null;
 }
 
-export function removeInstanceEventHandles(instance: any) {
+export function beforeRemoveInstance(instance: any) {
   // noop
-}
-
-let clientId: number = 0;
-export function makeClientId(): OpaqueIDType {
-  return 'c_' + (clientId++).toString(36);
-}
-
-export function makeClientIdInDEV(warnOnAccessInDEV: () => void): OpaqueIDType {
-  const id = 'c_' + (clientId++).toString(36);
-  return {
-    toString() {
-      warnOnAccessInDEV();
-      return id;
-    },
-    valueOf() {
-      warnOnAccessInDEV();
-      return id;
-    },
-  };
-}
-
-export function isOpaqueHydratingObject(value: mixed): boolean {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    value.$$typeof === REACT_OPAQUE_ID_TYPE
-  );
-}
-
-export function makeOpaqueHydratingObject(
-  attemptToReadValue: () => void,
-): OpaqueIDType {
-  return {
-    $$typeof: REACT_OPAQUE_ID_TYPE,
-    toString: attemptToReadValue,
-    valueOf: attemptToReadValue,
-  };
-}
-
-export function beforeActiveInstanceBlur() {
-  // noop
-}
-
-export function afterActiveInstanceBlur() {
-  // noop
-}
-
-export function preparePortalMount(portalInstance: Instance): void {
-  // noop
-}
-
-export function prepareScopeUpdate(scopeInstance: Object, inst: Object): void {
-  nodeToInstanceMap.set(scopeInstance, inst);
-}
-
-export function removeScopeEventHandles(scopeInstance: Object): void {
-  nodeToInstanceMap.delete(scopeInstance);
-}
-
-export function getInstanceFromScope(scopeInstance: Object): null | Object {
-  return nodeToInstanceMap.get(scopeInstance) || null;
 }

@@ -11,6 +11,8 @@ import dangerousStyleValue from './dangerousStyleValue';
 import hyphenateStyleName from './hyphenateStyleName';
 import warnValidStyle from './warnValidStyle';
 
+import {warnAboutShorthandPropertyCollision} from 'shared/ReactFeatureFlags';
+
 /**
  * Operations for dealing with CSS properties.
  */
@@ -126,6 +128,10 @@ export function validateShorthandPropertyCollisionInDev(
   nextStyles,
 ) {
   if (__DEV__) {
+    if (!warnAboutShorthandPropertyCollision) {
+      return;
+    }
+
     if (!nextStyles) {
       return;
     }

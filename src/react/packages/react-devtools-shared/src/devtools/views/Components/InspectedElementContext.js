@@ -51,16 +51,14 @@ export type GetInspectedElement = (
   id: number,
 ) => InspectedElementFrontend | null;
 
-export type InspectedElementContextType = {|
+type Context = {|
   copyInspectedElementPath: CopyInspectedElementPath,
   getInspectedElementPath: GetInspectedElementPath,
   getInspectedElement: GetInspectedElement,
   storeAsGlobal: StoreAsGlobal,
 |};
 
-const InspectedElementContext = createContext<InspectedElementContextType>(
-  ((null: any): InspectedElementContextType),
-);
+const InspectedElementContext = createContext<Context>(((null: any): Context));
 InspectedElementContext.displayName = 'InspectedElementContext';
 
 type ResolveFn = (inspectedElement: InspectedElementFrontend) => void;
@@ -76,7 +74,7 @@ const resource: Resource<
   InspectedElementFrontend,
 > = createResource(
   (element: Element) => {
-    const request = inProgressRequests.get(element);
+    let request = inProgressRequests.get(element);
     if (request != null) {
       return request.promise;
     }
@@ -209,7 +207,6 @@ function InspectedElementContextController({children}: Props) {
             hooks,
             props,
             state,
-            key,
           } = ((data.value: any): InspectedElementBackend);
 
           const inspectedElement: InspectedElementFrontend = {
@@ -219,7 +216,6 @@ function InspectedElementContextController({children}: Props) {
             canViewSource,
             hasLegacyContext,
             id,
-            key,
             source,
             type,
             owners:
@@ -353,19 +349,16 @@ function hydrateHelper(
   path?: Array<string | number>,
 ): Object | null {
   if (dehydratedData !== null) {
-    const {cleaned, data, unserializable} = dehydratedData;
+    let {cleaned, data, unserializable} = dehydratedData;
 
     if (path) {
       const {length} = path;
       if (length > 0) {
         // Hydration helper requires full paths, but inspection dehydrates with relative paths.
         // In that event it's important that we adjust the "cleaned" paths to match.
-        return hydrate(
-          data,
-          cleaned.map(cleanedPath => cleanedPath.slice(length)),
-          unserializable.map(unserializablePath =>
-            unserializablePath.slice(length),
-          ),
+        cleaned = cleaned.map(cleanedPath => cleanedPath.slice(length));
+        unserializable = unserializable.map(unserializablePath =>
+          unserializablePath.slice(length),
         );
       }
     }

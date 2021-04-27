@@ -10,13 +10,19 @@
 
 'use strict';
 
-import * as PropTypes from 'prop-types';
-import * as React from 'react';
-import ReactShallowRenderer from 'react-test-renderer/shallow';
-
-const createRenderer = ReactShallowRenderer.createRenderer;
+let createRenderer;
+let PropTypes;
+let React;
 
 describe('ReactShallowRenderer', () => {
+  beforeEach(() => {
+    jest.resetModules();
+
+    createRenderer = require('react-test-renderer/shallow').createRenderer;
+    PropTypes = require('prop-types');
+    React = require('react');
+  });
+
   it('should call all of the legacy lifecycle hooks', () => {
     const logs = [];
     const logger = message => () => logs.push(message) || true;
@@ -930,7 +936,7 @@ describe('ReactShallowRenderer', () => {
     let result = shallowRenderer.render(<SimpleComponent />);
     expect(result).toEqual(<div>value:0</div>);
 
-    const instance = shallowRenderer.getMountedInstance();
+    let instance = shallowRenderer.getMountedInstance();
     instance.updateState();
     result = shallowRenderer.getRenderOutput();
     expect(result).toEqual(<div>value:1</div>);
@@ -1170,7 +1176,7 @@ describe('ReactShallowRenderer', () => {
     }
 
     const shallowRenderer = createRenderer();
-    const result = shallowRenderer.render(<SimpleComponent />, {
+    let result = shallowRenderer.render(<SimpleComponent />, {
       foo: 'foo',
       bar: 'bar',
     });

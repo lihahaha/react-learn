@@ -7,9 +7,9 @@
  * @flow
  */
 
-import type {Fiber} from './ReactInternalTypes';
+import type {Fiber} from './ReactFiber';
 import type {Container, SuspenseInstance} from './ReactFiberHostConfig';
-import type {SuspenseState} from './ReactFiberSuspenseComponent.old';
+import type {SuspenseState} from './ReactFiberSuspenseComponent';
 
 import invariant from 'shared/invariant';
 
@@ -24,8 +24,8 @@ import {
   HostText,
   FundamentalComponent,
   SuspenseComponent,
-} from './ReactWorkTags';
-import {NoEffect, Placement, Hydrating, Deletion} from './ReactSideEffectTags';
+} from 'shared/ReactWorkTags';
+import {NoEffect, Placement, Hydrating} from 'shared/ReactSideEffectTags';
 import {enableFundamentalAPI} from 'shared/ReactFeatureFlags';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
@@ -125,7 +125,7 @@ function assertIsMounted(fiber) {
 }
 
 export function findCurrentFiberUsingSlowPath(fiber: Fiber): Fiber | null {
-  const alternate = fiber.alternate;
+  let alternate = fiber.alternate;
   if (!alternate) {
     // If there is no alternate, then we only need to check if it is mounted.
     const nearestMounted = getNearestMountedFiber(fiber);
@@ -144,12 +144,12 @@ export function findCurrentFiberUsingSlowPath(fiber: Fiber): Fiber | null {
   let a: Fiber = fiber;
   let b: Fiber = alternate;
   while (true) {
-    const parentA = a.return;
+    let parentA = a.return;
     if (parentA === null) {
       // We're at the root.
       break;
     }
-    const parentB = parentA.alternate;
+    let parentB = parentA.alternate;
     if (parentB === null) {
       // There is no alternate. This is an unusual case. Currently, it only
       // happens when a Suspense component is hidden. An extra fragment fiber
@@ -331,56 +331,4 @@ export function findCurrentHostFiberWithNoPortals(parent: Fiber): Fiber | null {
   // Flow needs the return null here, but ESLint complains about it.
   // eslint-disable-next-line no-unreachable
   return null;
-}
-
-export function isFiberSuspenseAndTimedOut(fiber: Fiber): boolean {
-  const memoizedState = fiber.memoizedState;
-  return (
-    fiber.tag === SuspenseComponent &&
-    memoizedState !== null &&
-    memoizedState.dehydrated === null
-  );
-}
-
-function doesFiberContain(parentFiber: Fiber, childFiber: Fiber): boolean {
-  let node = childFiber;
-  const parentFiberAlternate = parentFiber.alternate;
-  while (node !== null) {
-    if (node === parentFiber || node === parentFiberAlternate) {
-      return true;
-    }
-    node = node.return;
-  }
-  return false;
-}
-
-function isFiberTimedOutSuspenseThatContainsTargetFiber(
-  fiber: Fiber,
-  targetFiber: Fiber,
-): boolean {
-  const child = fiber.child;
-  return (
-    isFiberSuspenseAndTimedOut(fiber) &&
-    child !== null &&
-    doesFiberContain(child, targetFiber)
-  );
-}
-
-function isFiberDeletedAndContainsTargetFiber(
-  fiber: Fiber,
-  targetFiber: Fiber,
-): boolean {
-  return (
-    (fiber.effectTag & Deletion) !== 0 && doesFiberContain(fiber, targetFiber)
-  );
-}
-
-export function isFiberHiddenOrDeletedAndContains(
-  parentFiber: Fiber,
-  childFiber: Fiber,
-): boolean {
-  return (
-    isFiberDeletedAndContainsTargetFiber(parentFiber, childFiber) ||
-    isFiberTimedOutSuspenseThatContainsTargetFiber(parentFiber, childFiber)
-  );
 }

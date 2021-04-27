@@ -26,7 +26,7 @@ describe('ReactHooks', () => {
     jest.resetModules();
 
     ReactFeatureFlags = require('shared/ReactFeatureFlags');
-
+    ReactFeatureFlags.debugRenderPhaseSideEffectsForStrictMode = false;
     React = require('react');
     ReactTestRenderer = require('react-test-renderer');
     Scheduler = require('scheduler');
@@ -1087,7 +1087,7 @@ describe('ReactHooks', () => {
       ),
     ).toErrorDev([
       'Context can only be read while React is rendering',
-      'Cannot update a component (`Fn`) while rendering a different component (`Cls`).',
+      'Cannot update a component from inside the function body of a different component.',
     ]);
   });
 
@@ -1237,7 +1237,6 @@ describe('ReactHooks', () => {
       'Context can only be read while React is rendering',
     );
   });
-
   it('double-invokes components with Hooks in Strict Mode', () => {
     ReactFeatureFlags.debugRenderPhaseSideEffectsForStrictMode = true;
 
@@ -1287,7 +1286,7 @@ describe('ReactHooks', () => {
       };
     }
 
-    const renderer = ReactTestRenderer.create(null);
+    let renderer = ReactTestRenderer.create(null);
 
     renderCount = 0;
     renderer.update(<NoHooks />);
@@ -1301,14 +1300,14 @@ describe('ReactHooks', () => {
         <NoHooks />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
     renderCount = 0;
     renderer.update(
       <StrictMode>
         <NoHooks />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
 
     renderCount = 0;
     renderer.update(<FwdRef />);
@@ -1322,14 +1321,14 @@ describe('ReactHooks', () => {
         <FwdRef />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
     renderCount = 0;
     renderer.update(
       <StrictMode>
         <FwdRef />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
 
     renderCount = 0;
     renderer.update(<Memo arg={1} />);
@@ -1343,44 +1342,41 @@ describe('ReactHooks', () => {
         <Memo arg={1} />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
     renderCount = 0;
     renderer.update(
       <StrictMode>
         <Memo arg={2} />
       </StrictMode>,
     );
-    expect(renderCount).toBe(__DEV__ ? 2 : 1);
+    expect(renderCount).toBe(1);
 
-    if (!require('shared/ReactFeatureFlags').disableModulePatternComponents) {
-      renderCount = 0;
-      expect(() => renderer.update(<Factory />)).toErrorDev(
-        'Warning: The <Factory /> component appears to be a function component that returns a class instance. ' +
-          'Change Factory to a class that extends React.Component instead. ' +
-          "If you can't use a class try assigning the prototype on the function as a workaround. " +
-          '`Factory.prototype = React.Component.prototype`. ' +
-          "Don't use an arrow function since it cannot be called with `new` by React.",
-      );
-      expect(renderCount).toBe(1);
-      renderCount = 0;
-      renderer.update(<Factory />);
-      expect(renderCount).toBe(1);
-
-      renderCount = 0;
-      renderer.update(
-        <StrictMode>
-          <Factory />
-        </StrictMode>,
-      );
-      expect(renderCount).toBe(__DEV__ ? 2 : 1); // Treated like a class
-      renderCount = 0;
-      renderer.update(
-        <StrictMode>
-          <Factory />
-        </StrictMode>,
-      );
-      expect(renderCount).toBe(__DEV__ ? 2 : 1); // Treated like a class
-    }
+    renderCount = 0;
+    expect(() => renderer.update(<Factory />)).toErrorDev(
+      'Warning: The <Factory /> component appears to be a function component that returns a class instance. ' +
+        'Change Factory to a class that extends React.Component instead. ' +
+        "If you can't use a class try assigning the prototype on the function as a workaround. " +
+        '`Factory.prototype = React.Component.prototype`. ' +
+        "Don't use an arrow function since it cannot be called with `new` by React.",
+    );
+    expect(renderCount).toBe(1);
+    renderCount = 0;
+    renderer.update(<Factory />);
+    expect(renderCount).toBe(1);
+    renderCount = 0;
+    renderer.update(
+      <StrictMode>
+        <Factory />
+      </StrictMode>,
+    );
+    expect(renderCount).toBe(__DEV__ ? 2 : 1); // Treated like a class
+    renderCount = 0;
+    renderer.update(
+      <StrictMode>
+        <Factory />
+      </StrictMode>,
+    );
+    expect(renderCount).toBe(__DEV__ ? 2 : 1); // Treated like a class
 
     renderCount = 0;
     renderer.update(<HasHooks />);
@@ -1485,7 +1481,7 @@ describe('ReactHooks', () => {
     // We don't include useImperativeHandleHelper in this set,
     // because it generates an additional warning about the inputs length changing.
     // We test it below with its own test.
-    const orderedHooks = [
+    let orderedHooks = [
       useCallbackHelper,
       useContextHelper,
       useDebugValueHelper,
@@ -1499,7 +1495,7 @@ describe('ReactHooks', () => {
 
     // We don't include useContext or useDebugValue in this set,
     // because they aren't added to the hooks list and so won't throw.
-    const hooksInList = [
+    let hooksInList = [
       useCallbackHelper,
       useEffectHelper,
       useImperativeHandleHelper,
@@ -1692,7 +1688,7 @@ describe('ReactHooks', () => {
           return null;
           /* eslint-enable no-unused-vars */
         }
-        const root = ReactTestRenderer.create(<App update={false} />);
+        let root = ReactTestRenderer.create(<App update={false} />);
         expect(() => {
           try {
             root.update(<App update={true} />);
@@ -1738,7 +1734,7 @@ describe('ReactHooks', () => {
         return null;
         /* eslint-enable no-unused-vars */
       }
-      const root = ReactTestRenderer.create(<App update={false} />);
+      let root = ReactTestRenderer.create(<App update={false} />);
       expect(() => {
         expect(() => root.update(<App update={true} />)).toThrow(
           'custom error',
@@ -1757,7 +1753,7 @@ describe('ReactHooks', () => {
 
   // Regression test for #14674
   it('does not swallow original error when updating another component in render phase', async () => {
-    const {useState} = React;
+    let {useState} = React;
     spyOnDev(console, 'error');
 
     let _setState;
@@ -1787,15 +1783,15 @@ describe('ReactHooks', () => {
     if (__DEV__) {
       expect(console.error).toHaveBeenCalledTimes(2);
       expect(console.error.calls.argsFor(0)[0]).toContain(
-        'Warning: Cannot update a component (`%s`) while rendering ' +
-          'a different component (`%s`).',
+        'Warning: Cannot update a component from inside the function body ' +
+          'of a different component.%s',
       );
     }
   });
 
   // Regression test for https://github.com/facebook/react/issues/15057
   it('does not fire a false positive warning when previous effect unmounts the component', () => {
-    const {useState, useEffect} = React;
+    let {useState, useEffect} = React;
     let globalListener;
 
     function A() {

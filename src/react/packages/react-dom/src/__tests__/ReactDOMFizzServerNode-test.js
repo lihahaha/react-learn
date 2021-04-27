@@ -23,7 +23,7 @@ describe('ReactDOMFizzServer', () => {
   });
 
   function getTestWritable() {
-    const writable = new Stream.PassThrough();
+    let writable = new Stream.PassThrough();
     writable.setEncoding('utf8');
     writable.result = '';
     writable.on('data', chunk => (writable.result += chunk));
@@ -31,7 +31,7 @@ describe('ReactDOMFizzServer', () => {
   }
 
   it('should call pipeToNodeWritable', () => {
-    const writable = getTestWritable();
+    let writable = getTestWritable();
     ReactDOMFizzServer.pipeToNodeWritable(<div>hello world</div>, writable);
     jest.runAllTimers();
     expect(writable.result).toBe('<div>hello world</div>');

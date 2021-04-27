@@ -1,6 +1,6 @@
 'use strict';
 
-const jestDiff = require('jest-diff').default;
+const jestDiff = require('jest-diff');
 
 function toHaveLastRenderedWithNoInteractions(onRenderMockFn) {
   const calls = onRenderMockFn.mock.calls;

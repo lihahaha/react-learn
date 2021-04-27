@@ -10,7 +10,7 @@
 // TODO: direct imports like some-package/src/* are bad. Fix me.
 import {getCurrentFiberOwnerNameInDevOrNull} from 'react-reconciler/src/ReactCurrentFiber';
 
-import {checkControlledValueProps} from '../shared/ReactControlledValuePropTypes';
+import ReactControlledValuePropTypes from '../shared/ReactControlledValuePropTypes';
 import {getToStringValue, toString} from './ToStringValue';
 
 let didWarnValueDefaultValue;
@@ -38,7 +38,7 @@ const valuePropNames = ['value', 'defaultValue'];
  */
 function checkSelectPropTypes(props) {
   if (__DEV__) {
-    checkControlledValueProps('select', props);
+    ReactControlledValuePropTypes.checkPropTypes('select', props);
 
     for (let i = 0; i < valuePropNames.length; i++) {
       const propName = valuePropNames[i];
@@ -78,8 +78,8 @@ function updateOptions(
   const options: IndexableHTMLOptionsCollection = node.options;
 
   if (multiple) {
-    const selectedValues = (propValue: Array<string>);
-    const selectedValue = {};
+    let selectedValues = (propValue: Array<string>);
+    let selectedValue = {};
     for (let i = 0; i < selectedValues.length; i++) {
       // Prefix to avoid chaos with special keys.
       selectedValue['$' + selectedValues[i]] = true;
@@ -96,7 +96,7 @@ function updateOptions(
   } else {
     // Do not set `select.value` as exact behavior isn't consistent across all
     // browsers for all cases.
-    const selectedValue = toString(getToStringValue((propValue: any)));
+    let selectedValue = toString(getToStringValue((propValue: any)));
     let defaultSelected = null;
     for (let i = 0; i < options.length; i++) {
       if (options[i].value === selectedValue) {

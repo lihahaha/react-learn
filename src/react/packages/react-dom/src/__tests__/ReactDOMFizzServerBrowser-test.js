@@ -24,10 +24,10 @@ describe('ReactDOMFizzServer', () => {
   });
 
   async function readResult(stream) {
-    const reader = stream.getReader();
+    let reader = stream.getReader();
     let result = '';
     while (true) {
-      const {done, value} = await reader.read();
+      let {done, value} = await reader.read();
       if (done) {
         return result;
       }
@@ -36,10 +36,10 @@ describe('ReactDOMFizzServer', () => {
   }
 
   it('should call renderToReadableStream', async () => {
-    const stream = ReactDOMFizzServer.renderToReadableStream(
+    let stream = ReactDOMFizzServer.renderToReadableStream(
       <div>hello world</div>,
     );
-    const result = await readResult(stream);
+    let result = await readResult(stream);
     expect(result).toBe('<div>hello world</div>');
   });
 });

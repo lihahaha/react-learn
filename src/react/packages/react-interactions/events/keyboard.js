@@ -7,4 +7,6 @@
  * @flow
  */
 
-export * from './src/dom/Keyboard';
+'use strict';
+
+module.exports = require('./src/dom/Keyboard');

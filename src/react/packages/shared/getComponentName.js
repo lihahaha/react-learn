@@ -7,7 +7,7 @@
  * @flow
  */
 
-import type {LazyComponent} from 'react/src/ReactLazy';
+import type {LazyComponent} from 'shared/ReactLazyComponent';
 
 import {
   REACT_CONTEXT_TYPE,
@@ -23,7 +23,7 @@ import {
   REACT_LAZY_TYPE,
   REACT_BLOCK_TYPE,
 } from 'shared/ReactSymbols';
-import type {ReactContext, ReactProviderType} from 'shared/ReactTypes';
+import {refineResolvedLazyComponent} from 'shared/ReactLazyComponent';
 
 function getWrappedName(
   outerType: mixed,
@@ -35,10 +35,6 @@ function getWrappedName(
     (outerType: any).displayName ||
     (functionName !== '' ? `${wrapperName}(${functionName})` : wrapperName)
   );
-}
-
-function getContextName(type: ReactContext<any>) {
-  return type.displayName || 'Context';
 }
 
 function getComponentName(type: mixed): string | null {
@@ -77,26 +73,22 @@ function getComponentName(type: mixed): string | null {
   if (typeof type === 'object') {
     switch (type.$$typeof) {
       case REACT_CONTEXT_TYPE:
-        const context: ReactContext<any> = (type: any);
-        return getContextName(context) + '.Consumer';
+        return 'Context.Consumer';
       case REACT_PROVIDER_TYPE:
-        const provider: ReactProviderType<any> = (type: any);
-        return getContextName(provider._context) + '.Provider';
+        return 'Context.Provider';
       case REACT_FORWARD_REF_TYPE:
         return getWrappedName(type, type.render, 'ForwardRef');
       case REACT_MEMO_TYPE:
         return getComponentName(type.type);
       case REACT_BLOCK_TYPE:
-        return getComponentName(type._render);
+        return getComponentName(type.render);
       case REACT_LAZY_TYPE: {
-        const lazyComponent: LazyComponent<any, any> = (type: any);
-        const payload = lazyComponent._payload;
-        const init = lazyComponent._init;
-        try {
-          return getComponentName(init(payload));
-        } catch (x) {
-          return null;
+        const thenable: LazyComponent<mixed> = (type: any);
+        const resolvedThenable = refineResolvedLazyComponent(thenable);
+        if (resolvedThenable) {
+          return getComponentName(resolvedThenable);
         }
+        break;
       }
     }
   }

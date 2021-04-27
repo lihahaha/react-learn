@@ -14,7 +14,6 @@ module.exports = {
     WeakMap: true,
     WeakSet: true,
     Uint16Array: true,
-    Reflect: true,
     // Vendor specific
     MSApp: true,
     __REACT_DEVTOOLS_GLOBAL_HOOK__: true,

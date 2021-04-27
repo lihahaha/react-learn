@@ -10,11 +10,7 @@
 import type {ReactNodeList} from 'shared/ReactTypes';
 import type {Writable} from 'stream';
 
-import {
-  createRequest,
-  startWork,
-  startFlowing,
-} from 'react-server/src/ReactFizzServer';
+import {createRequest, startWork, startFlowing} from 'react-server/inline.dom';
 
 function createDrainHandler(destination, request) {
   return () => startFlowing(request);
@@ -24,9 +20,11 @@ function pipeToNodeWritable(
   children: ReactNodeList,
   destination: Writable,
 ): void {
-  const request = createRequest(children, destination);
+  let request = createRequest(children, destination);
   destination.on('drain', createDrainHandler(destination, request));
   startWork(request);
 }
 
-export {pipeToNodeWritable};
+export default {
+  pipeToNodeWritable,
+};

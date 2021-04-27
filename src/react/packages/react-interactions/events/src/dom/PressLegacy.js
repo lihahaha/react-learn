@@ -11,7 +11,7 @@ import type {
   ReactDOMResponderEvent,
   ReactDOMResponderContext,
   PointerType,
-} from 'react-dom/src/shared/ReactDOMTypes';
+} from 'shared/ReactDOMTypes';
 import type {
   EventPriority,
   ReactEventResponderListener,
@@ -174,7 +174,8 @@ function createPressEvent(
     ({altKey, ctrlKey, metaKey, shiftKey} = nativeEvent);
     // Only check for one property, checking for all of them is costly. We can assume
     // if clientX exists, so do the rest.
-    const eventObject = (touchEvent: any) || (nativeEvent: any);
+    let eventObject;
+    eventObject = (touchEvent: any) || (nativeEvent: any);
     if (eventObject) {
       ({clientX, clientY, pageX, pageY, screenX, screenY} = eventObject);
     }
@@ -586,11 +587,7 @@ const pressResponderImpl = {
                 !ctrlKey &&
                 !altKey
               ) {
-                // Prevent spacebar press from scrolling the window
-                const key = nativeEvent.key;
-                if (key === ' ' || key === 'Spacebar') {
-                  nativeEvent.preventDefault();
-                }
+                nativeEvent.preventDefault();
                 state.shouldPreventClick = true;
               }
             } else {
@@ -641,11 +638,7 @@ const pressResponderImpl = {
           addRootEventTypes(context, state);
         } else {
           // Prevent spacebar press from scrolling the window
-          const key = nativeEvent.key;
-          if (
-            isValidKeyboardEvent(nativeEvent) &&
-            (key === ' ' || key === 'Spacebar')
-          ) {
+          if (isValidKeyboardEvent(nativeEvent) && nativeEvent.key === ' ') {
             nativeEvent.preventDefault();
           }
         }
@@ -678,8 +671,7 @@ const pressResponderImpl = {
     props: PressProps,
     state: PressState,
   ): void {
-    const {pointerType, type} = event;
-    let target = event.target;
+    let {pointerType, target, type} = event;
 
     const nativeEvent: any = event.nativeEvent;
     const isPressed = state.isPressed;
@@ -894,9 +886,16 @@ const pressResponderImpl = {
         break;
       }
       case 'blur': {
-        // If we encounter a blur that happens on the pressed target
-        // then disengage the blur.
-        if (isPressed && target === state.pressTarget) {
+        // If we encounter a blur event that moves focus to
+        // the window, then the relatedTarget will be null.
+        // In this case, we should cancel the active press.
+        // Alternatively, if the blur target matches the
+        // current pressed target, we should also cancel
+        // the active press.
+        if (
+          isPressed &&
+          (nativeEvent.relatedTarget === null || target === state.pressTarget)
+        ) {
           dispatchCancel(event, context, props, state);
         }
       }
@@ -911,7 +910,6 @@ const pressResponderImpl = {
   },
 };
 
-// $FlowFixMe Can't add generic types without causing a parsing/syntax errors
 export const PressResponder = React.DEPRECATED_createResponder(
   'Press',
   pressResponderImpl,
@@ -919,6 +917,6 @@ export const PressResponder = React.DEPRECATED_createResponder(
 
 export function usePress(
   props: PressProps,
-): ?ReactEventResponderListener<any, any> {
+): ReactEventResponderListener<any, any> {
   return React.DEPRECATED_useResponder(PressResponder, props);
 }

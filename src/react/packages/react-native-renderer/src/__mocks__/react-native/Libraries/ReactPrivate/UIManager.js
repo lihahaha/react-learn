@@ -15,7 +15,7 @@ import invariant from 'shared/invariant';
 
 // Map of viewTag -> {children: [childTag], parent: ?parentTag}
 const roots = [];
-const views = new Map();
+let views = new Map();
 
 function autoCreateRoot(tag) {
   // Seriously, this is how we distinguish roots in RN.

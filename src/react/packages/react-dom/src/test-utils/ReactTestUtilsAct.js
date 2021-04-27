@@ -7,14 +7,15 @@
  * @flow
  */
 
-import type {Thenable} from 'shared/ReactTypes';
+import type {Thenable} from 'react-reconciler/src/ReactFiberWorkLoop';
 
 import * as ReactDOM from 'react-dom';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 import enqueueTask from 'shared/enqueueTask';
 import * as Scheduler from 'scheduler';
 
-// Keep in sync with ReactDOM.js, and ReactTestUtils.js:
+// Keep in sync with ReactDOMUnstableNativeDependencies.js
+// ReactDOM.js, and ReactTestUtils.js:
 const [
   /* eslint-disable no-unused-vars */
   getInstanceFromNode,
@@ -22,9 +23,12 @@ const [
   getFiberCurrentPropsFromNode,
   injectEventPluginsByName,
   eventNameDispatchConfigs,
+  accumulateTwoPhaseDispatches,
+  accumulateDirectDispatches,
   enqueueStateRestore,
   restoreStateIfNeeded,
   dispatchEvent,
+  runEventsInBatch,
   /* eslint-enable no-unused-vars */
   flushPassiveEffects,
   IsThisRendererActing,
@@ -71,7 +75,7 @@ function flushWorkAndMicroTasks(onDone: (err: ?Error) => void) {
 let actingUpdatesScopeDepth = 0;
 let didWarnAboutUsingActInProd = false;
 
-function act(callback: () => Thenable<mixed>): Thenable<void> {
+function act(callback: () => Thenable) {
   if (!__DEV__) {
     if (didWarnAboutUsingActInProd === false) {
       didWarnAboutUsingActInProd = true;
@@ -81,11 +85,13 @@ function act(callback: () => Thenable<mixed>): Thenable<void> {
       );
     }
   }
-  const previousActingUpdatesScopeDepth = actingUpdatesScopeDepth;
+  let previousActingUpdatesScopeDepth = actingUpdatesScopeDepth;
+  let previousIsSomeRendererActing;
+  let previousIsThisRendererActing;
   actingUpdatesScopeDepth++;
 
-  const previousIsSomeRendererActing = IsSomeRendererActing.current;
-  const previousIsThisRendererActing = IsThisRendererActing.current;
+  previousIsSomeRendererActing = IsSomeRendererActing.current;
+  previousIsThisRendererActing = IsThisRendererActing.current;
   IsSomeRendererActing.current = true;
   IsThisRendererActing.current = true;
 
@@ -142,7 +148,7 @@ function act(callback: () => Thenable<mixed>): Thenable<void> {
     // effects and  microtasks in a loop until flushPassiveEffects() === false,
     // and cleans up
     return {
-      then(resolve, reject) {
+      then(resolve: () => void, reject: (?Error) => void) {
         called = true;
         result.then(
           () => {
@@ -202,7 +208,7 @@ function act(callback: () => Thenable<mixed>): Thenable<void> {
 
     // in the sync case, the returned thenable only warns *if* await-ed
     return {
-      then(resolve) {
+      then(resolve: () => void) {
         if (__DEV__) {
           console.error(
             'Do not await the result of calling act(...) with sync logic, it is not a Promise.',

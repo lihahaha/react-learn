@@ -20,7 +20,6 @@ import {
   unmountComponentAtNode,
 } from './ReactDOMLegacy';
 import {createRoot, createBlockingRoot, isValidContainer} from './ReactDOMRoot';
-import {createEventHandle} from './ReactDOMEventHandle';
 
 import {
   batchedEventUpdates,
@@ -36,13 +35,24 @@ import {
   attemptUserBlockingHydration,
   attemptContinuousHydration,
   attemptHydrationAtCurrentPriority,
-} from 'react-reconciler/src/ReactFiberReconciler';
-import {createPortal as createPortalImpl} from 'react-reconciler/src/ReactPortal';
+} from 'react-reconciler/inline.dom';
+import {createPortal as createPortalImpl} from 'shared/ReactPortal';
 import {canUseDOM} from 'shared/ExecutionEnvironment';
+import {setBatchingImplementation} from 'legacy-events/ReactGenericBatching';
+import {
+  setRestoreImplementation,
+  enqueueStateRestore,
+  restoreStateIfNeeded,
+} from 'legacy-events/ReactControlledComponent';
+import {runEventsInBatch} from 'legacy-events/EventBatching';
 import {
   eventNameDispatchConfigs,
   injectEventPluginsByName,
 } from 'legacy-events/EventPluginRegistry';
+import {
+  accumulateTwoPhaseDispatches,
+  accumulateDirectDispatches,
+} from 'legacy-events/EventPropagators';
 import ReactVersion from 'shared/ReactVersion';
 import invariant from 'shared/invariant';
 import {warnUnstableRenderSubtreeIntoContainer} from 'shared/ReactFeatureFlags';
@@ -62,12 +72,6 @@ import {
   setAttemptHydrationAtCurrentPriority,
   queueExplicitHydrationTarget,
 } from '../events/ReactDOMEventReplaying';
-import {setBatchingImplementation} from '../events/ReactDOMUpdateBatching';
-import {
-  setRestoreImplementation,
-  enqueueStateRestore,
-  restoreStateIfNeeded,
-} from '../events/ReactDOMControlledComponent';
 
 setAttemptSynchronousHydration(attemptSynchronousHydration);
 setAttemptUserBlockingHydration(attemptUserBlockingHydration);
@@ -171,17 +175,20 @@ function unstable_createPortal(
 }
 
 const Internals = {
-  // Keep in sync with ReactTestUtils.js, and ReactTestUtilsAct.js.
-  // This is an array for better minification.
+  // Keep in sync with ReactDOMUnstableNativeDependencies.js
+  // ReactTestUtils.js, and ReactTestUtilsAct.js. This is an array for better minification.
   Events: [
     getInstanceFromNode,
     getNodeFromInstance,
     getFiberCurrentPropsFromNode,
     injectEventPluginsByName,
     eventNameDispatchConfigs,
+    accumulateTwoPhaseDispatches,
+    accumulateDirectDispatches,
     enqueueStateRestore,
     restoreStateIfNeeded,
     dispatchEvent,
+    runEventsInBatch,
     flushPassiveEffects,
     IsThisRendererActing,
   ],
@@ -201,6 +208,8 @@ export {
   // exposeConcurrentModeAPIs
   createRoot,
   createBlockingRoot,
+  discreteUpdates as unstable_discreteUpdates,
+  flushDiscreteUpdates as unstable_flushDiscreteUpdates,
   flushControlled as unstable_flushControlled,
   scheduleHydration as unstable_scheduleHydration,
   // Disabled behind disableUnstableRenderSubtreeIntoContainer
@@ -209,8 +218,6 @@ export {
   // Temporary alias since we already shipped React 16 RC with it.
   // TODO: remove in React 17.
   unstable_createPortal,
-  // enableCreateEventHandleAPI
-  createEventHandle as unstable_createEventHandle,
 };
 
 const foundDevTools = injectIntoDevTools({

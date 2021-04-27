@@ -1,6 +1,6 @@
 'use strict';
 
-const ReactTransportDOMServer = require('react-transport-dom-webpack/server');
+const ReactFlightDOMServer = require('react-flight-dom-webpack/server');
 const React = require('react');
 const Stream = require('stream');
 
@@ -20,7 +20,9 @@ function HTML() {
 module.exports = function(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   let model = {
-    content: <HTML />,
+    content: {
+      __html: <HTML />,
+    },
   };
-  ReactTransportDOMServer.pipeToNodeWritable(model, res);
+  ReactFlightDOMServer.pipeToNodeWritable(model, res);
 };

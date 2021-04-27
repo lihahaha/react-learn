@@ -7,4 +7,6 @@
  * @flow
  */
 
-export * from './src/dom/ContextMenu';
+'use strict';
+
+module.exports = require('./src/dom/ContextMenu');

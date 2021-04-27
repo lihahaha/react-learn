@@ -7,59 +7,29 @@
  * @flow
  */
 
-import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
+import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {
   DispatchConfig,
   ReactSyntheticEvent,
 } from './ReactSyntheticEventType';
 import type {TopLevelType} from './TopLevelEventTypes';
+import type {EventSystemFlags} from 'legacy-events/EventSystemFlags';
 
 export type EventTypes = {[key: string]: DispatchConfig, ...};
 
-export type AnyNativeEvent = Event | KeyboardEvent | MouseEvent | TouchEvent;
+export type AnyNativeEvent = Event | KeyboardEvent | MouseEvent | Touch;
 
 export type PluginName = string;
 
-export type EventSystemFlags = number;
-
-export type LegacyPluginModule<NativeEvent> = {
+export type PluginModule<NativeEvent> = {
   eventTypes: EventTypes,
   extractEvents: (
     topLevelType: TopLevelType,
     targetInst: null | Fiber,
     nativeTarget: NativeEvent,
     nativeEventTarget: null | EventTarget,
-    eventSystemFlags?: number,
-    container?: null | EventTarget,
+    eventSystemFlags: EventSystemFlags,
+    container?: Document | Element | Node,
   ) => ?ReactSyntheticEvent,
   tapMoveThreshold?: number,
-};
-
-export type DispatchQueueItemPhaseEntry = {|
-  instance: null | Fiber,
-  listener: Function,
-  currentTarget: EventTarget,
-|};
-
-export type DispatchQueueItemPhase = Array<DispatchQueueItemPhaseEntry>;
-
-export type DispatchQueueItem = {|
-  event: ReactSyntheticEvent,
-  capture: DispatchQueueItemPhase,
-  bubble: DispatchQueueItemPhase,
-|};
-
-export type DispatchQueue = Array<DispatchQueueItem>;
-
-export type ModernPluginModule<NativeEvent> = {
-  eventTypes: EventTypes,
-  extractEvents: (
-    dispatchQueue: DispatchQueue,
-    topLevelType: TopLevelType,
-    targetInst: null | Fiber,
-    nativeTarget: NativeEvent,
-    nativeEventTarget: null | EventTarget,
-    eventSystemFlags: number,
-    container: null | EventTarget,
-  ) => void,
 };

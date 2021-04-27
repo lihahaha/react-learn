@@ -127,9 +127,7 @@ function prepareToDraw(): void {
 
   draw(nodeToData);
 
-  if (earliestExpiration !== Number.MAX_VALUE) {
-    redrawTimeoutID = setTimeout(prepareToDraw, earliestExpiration - now);
-  }
+  redrawTimeoutID = setTimeout(prepareToDraw, earliestExpiration - now);
 }
 
 function measureNode(node: Object): Rect | null {
@@ -137,7 +135,7 @@ function measureNode(node: Object): Rect | null {
     return null;
   }
 
-  const currentWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
+  let currentWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
 
   return getNestedBoundingClientRect(node, currentWindow);
 }
