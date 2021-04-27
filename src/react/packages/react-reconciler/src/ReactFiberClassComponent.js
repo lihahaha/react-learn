@@ -180,7 +180,7 @@ export function applyDerivedStateFromProps(
 
 const classComponentUpdater = {
   isMounted,
-  enqueueSetState(inst, payload, callback) {
+  enqueueSetState(inst, payload, callback) { // inst就是this
     const fiber = getInstance(inst);
     const currentTime = requestCurrentTimeForUpdate();
     const suspenseConfig = requestCurrentSuspenseConfig();
@@ -193,9 +193,6 @@ const classComponentUpdater = {
     const update = createUpdate(expirationTime, suspenseConfig);
     update.payload = payload;
     if (callback !== undefined && callback !== null) {
-      if (__DEV__) {
-        warnOnInvalidCallback(callback, 'setState');
-      }
       update.callback = callback;
     }
 
@@ -217,9 +214,6 @@ const classComponentUpdater = {
     update.payload = payload;
 
     if (callback !== undefined && callback !== null) {
-      if (__DEV__) {
-        warnOnInvalidCallback(callback, 'replaceState');
-      }
       update.callback = callback;
     }
 
@@ -237,12 +231,9 @@ const classComponentUpdater = {
     );
 
     const update = createUpdate(expirationTime, suspenseConfig);
-    update.tag = ForceUpdate;
+    update.tag = ForceUpdate; // 唯一区别
 
     if (callback !== undefined && callback !== null) {
-      if (__DEV__) {
-        warnOnInvalidCallback(callback, 'forceUpdate');
-      }
       update.callback = callback;
     }
 
