@@ -225,17 +225,27 @@ export function createContainer(
   console.log('%ccreateContainer', 'font-size:14px;color:green;');
   return createFiberRoot(containerInfo, tag, hydrate, hydrationCallbacks);
 }
-
+/**
+ * 计算任务的过期时间
+ * 再根据任务过期时间创建 Update 任务
+ * 通过任务的过期时间还可以计算出任务的优先级
+ */
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): ExpirationTime {
-  // 这里在初次渲染时 element是children container是root parentComponent是null
+  // 这里在初次渲染时 element是children container是fiber root parentComponent是null
   const current = container.current; // current就是RootFiber
   const currentTime = requestCurrentTimeForUpdate(); // 这里得到的是到目前为止 react还能处理多少单位时间(1单位时间是10ms)
-  const suspenseConfig = requestCurrentSuspenseConfig();
+  const suspenseConfig = requestCurrentSuspenseConfig(); // 异步加载设置 null
+  // 计算过期时间
+  // 为防止任务因为优先级的原因一直被打断而未能执行
+  // react 会设置一个过期时间, 当时间到了过期时间的时候
+  // 如果任务还未执行的话, react 将会强制执行该任务
+  // 初始化渲染时, 任务同步执行不涉及被打断的问题
+  // 过期时间被设置成了 1073741823, 这个数值表示当前任务为同步任务
   const expirationTime = computeExpirationForFiber(
     currentTime,
     current,
@@ -243,8 +253,8 @@ export function updateContainer(
   );
 
   const update = createUpdate(expirationTime, suspenseConfig); // update是react中用来标记应用要更新的地点
-  // Caution: React DevTools currently depends on this property
-  // being called "element".
+  // 将要更新的内容挂载到更新对象中的 payload 中
+  // 将要更新的组件存储在 payload 对象中, 方便后期获取
   update.payload = {element};
 
   callback = callback === undefined ? null : callback;

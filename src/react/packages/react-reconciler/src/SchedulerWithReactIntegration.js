@@ -83,15 +83,15 @@ export const now =
 
 export function getCurrentPriorityLevel(): ReactPriorityLevel {
   switch (Scheduler_getCurrentPriorityLevel()) {
-    case Scheduler_ImmediatePriority:
+    case Scheduler_ImmediatePriority: // 99 立即执行的任务
       return ImmediatePriority;
-    case Scheduler_UserBlockingPriority:
+    case Scheduler_UserBlockingPriority: // 98 用户交互任务
       return UserBlockingPriority;
-    case Scheduler_NormalPriority:
+    case Scheduler_NormalPriority: // 97 普通优先级
       return NormalPriority;
-    case Scheduler_LowPriority:
+    case Scheduler_LowPriority: // 96 低优先级任务
       return LowPriority;
-    case Scheduler_IdlePriority:
+    case Scheduler_IdlePriority: // 95 闲时任务
       return IdlePriority;
     default:
       invariant(false, 'Unknown priority level.');

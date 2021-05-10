@@ -196,7 +196,7 @@ export function markRootUpdatedAtTime(
   root: FiberRoot,
   expirationTime: ExpirationTime,
 ): void {
-  // Update the range of pending times
+  // 更新 root 树上挂起的时间
   const firstPendingTime = root.firstPendingTime;
   if (expirationTime > firstPendingTime) {
     root.firstPendingTime = expirationTime;
@@ -204,6 +204,7 @@ export function markRootUpdatedAtTime(
 
   // Update the range of suspended times. Treat everything lower priority or
   // equal to this update as unsuspended.
+  // 更新挂起时间的范围。将优先级较低或等于此更新的所有内容视为未挂起。
   const firstSuspendedTime = root.firstSuspendedTime;
   if (firstSuspendedTime !== NoWork) {
     if (expirationTime >= firstSuspendedTime) {
@@ -215,6 +216,7 @@ export function markRootUpdatedAtTime(
 
     // This is a pending level. Check if it's higher priority than the next
     // known pending level.
+    // 这是一个挂起的级别。检查当前的优先级是否高于下一个已知的挂起级别，如果是，则将下一个挂起的级别更改为当前的优先级
     if (expirationTime > root.nextKnownPendingLevel) {
       root.nextKnownPendingLevel = expirationTime;
     }

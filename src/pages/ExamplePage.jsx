@@ -17,9 +17,20 @@ function FunctionComponent({name}) {
 }
 
 class ParentComponent extends Component {
+  state = {
+    count: 0
+  };
   render() {
     return <div><div className="box border">
-    <p>开课吧</p>
+    <p>开课吧{this.state.count}</p>
+    <div onClick={() => {
+      this.setState({
+        count: 1
+      });
+      this.setState({
+        count: 3
+      });
+    }}>123456</div>
     {/* <a href="https://kaikeba.com/">开课吧</a>
     <FunctionComponent name="函数组件" />
     <classComponent name="class组件" /> */}

@@ -210,18 +210,20 @@ if (__DEV__) {
   didWarnAboutTailOptions = {};
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
-
+// 构建子级 Fiber 对象
 export function reconcileChildren(
-  current: Fiber | null,
-  workInProgress: Fiber,
-  nextChildren: any,
-  renderExpirationTime: ExpirationTime,
+  current: Fiber | null, // 旧 Fiber
+  workInProgress: Fiber, // 父级 Fiber
+  nextChildren: any, // 子级 vdom 对象
+  renderExpirationTime: ExpirationTime, // 初始渲染 整型最大值 代表同步任务
 ) {
+  /**
+   * 为什么要传递 current ?
+   * 如果不是初始渲染的情况, 要进行新旧 Fiber 对比
+   * 初始渲染时则用不到 current
+   */
+  // 如果就 Fiber 为 null 表示初始渲染
   if (current === null) {
-    // If this is a fresh new component that hasn't been rendered yet, we
-    // won't update its child set by applying minimal side-effects. Instead,
-    // we will add them all to the child before it gets rendered. That means
-    // we can optimize this reconciliation pass by not tracking side-effects.
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
@@ -229,12 +231,7 @@ export function reconcileChildren(
       renderExpirationTime,
     );
   } else {
-    // If the current child is the same as the work in progress, it means that
-    // we haven't yet started any work on these children. Therefore, we use
-    // the clone algorithm to create a copy of all the current children.
-
-    // If we had any progressed work already, that is invalid at this point so
-    // let's throw it out.
+    // 这里就代表是更新
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -617,22 +614,6 @@ function updateFunctionComponent(
   nextProps: any,
   renderExpirationTime,
 ) {
-  if (__DEV__) {
-    if (workInProgress.type !== workInProgress.elementType) {
-      // Lazy component props can't be validated in createElement
-      // because they're only guaranteed to be resolved here.
-      const innerPropTypes = Component.propTypes;
-      if (innerPropTypes) {
-        checkPropTypes(
-          innerPropTypes,
-          nextProps, // Resolved props
-          'prop',
-          getComponentName(Component),
-          getCurrentFiberStackInDev,
-        );
-      }
-    }
-  }
 
   let context;
   if (!disableLegacyContext) {
@@ -988,6 +969,7 @@ function pushHostRootContext(workInProgress) {
 
 function updateHostRoot(current, workInProgress, renderExpirationTime) {
   pushHostRootContext(workInProgress);
+  // 获取更新队列
   const updateQueue = workInProgress.updateQueue;
   invariant(
     current !== null && updateQueue !== null,
@@ -995,15 +977,26 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
       'bailed out. This error is likely caused by a bug in React. Please ' +
       'file an issue.',
   );
+  // 获取新的 props 对象 null
   const nextProps = workInProgress.pendingProps;
+  // 获取上一次渲染使用的 state null
   const prevState = workInProgress.memoizedState;
+  // 获取上一次渲染使用的 children null
   const prevChildren = prevState !== null ? prevState.element : null;
+  // 浅复制更新队列, 防止引用属性互相影响
+  // workInProgress.updateQueue 浅拷贝 current.updateQueue
   cloneUpdateQueue(current, workInProgress);
+  // 获取 updateQueue.payload 并赋值到 workInProgress.memoizedState
+  // 要更新的内容就是 element 就是 rootFiber 的子元素
   processUpdateQueue(workInProgress, nextProps, null, renderExpirationTime);
+  // 获取 element 所在对象
   const nextState = workInProgress.memoizedState;
-  // Caution: React DevTools currently depends on this property
-  // being called "element".
+  // 从对象中获取 element
   const nextChildren = nextState.element;
+  // 在计算 state 后如果前后两个 Children 相同的情况
+  // prevChildren => null
+  // nextState => App
+  // 初始渲染时为 false
   if (nextChildren === prevChildren) {
     // If the state is the same as before, that's a bailout because we had
     // no work that expires at this time.
@@ -1014,7 +1007,10 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
       renderExpirationTime,
     );
   }
+  // 获取 fiberRoot 对象
   const root: FiberRoot = workInProgress.stateNode;
+  // 客户端渲染走 else
+  // 构建子节点 fiber 对象
   if (root.hydrate && enterHydrationState(workInProgress)) {
     // If we don't have any current children this might be the first pass.
     // We always try to hydrate. If this isn't a hydration pass there won't
@@ -1051,6 +1047,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
     );
     resetHydrationState();
   }
+  // 返回子节点 fiber 对象
   return workInProgress.child;
 }
 
@@ -2882,32 +2879,17 @@ function remountFiber(
     );
   }
 }
-
+// 从父到子, 构建 Fiber 节点对象
+// 首次进入的时候 current 是 rootFiber, workInProgress.tag 的值为 3，代表 HostRoot
 function beginWork(
-  current: Fiber | null,
+  current: Fiber | null, 
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ): Fiber | null {
   const updateExpirationTime = workInProgress.expirationTime;
-
-  if (__DEV__) {
-    if (workInProgress._debugNeedsRemount && current !== null) {
-      // This will restart the begin phase with a new fiber.
-      return remountFiber(
-        current,
-        workInProgress,
-        createFiberFromTypeAndProps(
-          workInProgress.type,
-          workInProgress.key,
-          workInProgress.pendingProps,
-          workInProgress._debugOwner || null,
-          workInProgress.mode,
-          workInProgress.expirationTime,
-        ),
-      );
-    }
-  }
-
+  // 判断是否有旧的 Fiber 对象
+  // 初始渲染时 只有 rootFiber 节点存在 current
+  // 暂时没用
   if (current !== null) {
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
@@ -3109,6 +3091,7 @@ function beginWork(
   workInProgress.expirationTime = NoWork;
 
   switch (workInProgress.tag) {
+    // 函数组件在第一次被渲染时使用， 2
     case IndeterminateComponent: {
       return mountIndeterminateComponent(
         current,
@@ -3117,6 +3100,7 @@ function beginWork(
         renderExpirationTime,
       );
     }
+    // 16
     case LazyComponent: {
       const elementType = workInProgress.elementType;
       return mountLazyComponent(
@@ -3127,6 +3111,7 @@ function beginWork(
         renderExpirationTime,
       );
     }
+    // 0
     case FunctionComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3142,6 +3127,7 @@ function beginWork(
         renderExpirationTime,
       );
     }
+    // 1
     case ClassComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3157,8 +3143,10 @@ function beginWork(
         renderExpirationTime,
       );
     }
+    // 3
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderExpirationTime);
+    // 5
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderExpirationTime);
     case HostText:

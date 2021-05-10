@@ -381,35 +381,27 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
+// 双Fiber树，当前屏幕显示的Fiber树成为current Fiber树，正在内存中构建的Fiber树为workInProgress Fiber树，他们之间通过alternate连接
+// React应用的根节点通过current指针在不同Fiber树的rootFiber间切换来实现Fiber树的切换。当workInProgress Fiber树构建完成交给Renderer渲染在页面上后，应用根节点的current指针指向workInProgress Fiber树，
+// 此时workInProgress Fiber树就变为current Fiber树。每次状态更新都会产生新的workInProgress Fiber树，通过current与workInProgress的替换，完成DOM更新
 export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
+  // 获取 current Fiber 对应的 workInProgress Fiber
   let workInProgress = current.alternate;
   if (workInProgress === null) {
-    // We use a double buffering pooling technique because we know that we'll
-    // only ever need at most two versions of a tree. We pool the "other" unused
-    // node that we're free to reuse. This is lazily created to avoid allocating
-    // extra objects for things that are never updated. It also allow us to
-    // reclaim the extra memory if needed.
+    // 创建 fiber 对象
     workInProgress = createFiber(
       current.tag,
       pendingProps,
       current.key,
       current.mode,
     );
+    // 属性复用
     workInProgress.elementType = current.elementType;
     workInProgress.type = current.type;
     workInProgress.stateNode = current.stateNode;
-
-    if (__DEV__) {
-      // DEV-only fields
-      if (enableUserTimingAPI) {
-        workInProgress._debugID = current._debugID;
-      }
-      workInProgress._debugSource = current._debugSource;
-      workInProgress._debugOwner = current._debugOwner;
-      workInProgress._debugHookTypes = current._debugHookTypes;
-    }
-
+    // 使用 alternate 存储 current
     workInProgress.alternate = current;
+    // 使用 alternate 存储 workInProgress
     current.alternate = workInProgress;
   } else {
     workInProgress.pendingProps = pendingProps;
@@ -461,25 +453,6 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
   if (enableProfilerTimer) {
     workInProgress.selfBaseDuration = current.selfBaseDuration;
     workInProgress.treeBaseDuration = current.treeBaseDuration;
-  }
-
-  if (__DEV__) {
-    workInProgress._debugNeedsRemount = current._debugNeedsRemount;
-    switch (workInProgress.tag) {
-      case IndeterminateComponent:
-      case FunctionComponent:
-      case SimpleMemoComponent:
-        workInProgress.type = resolveFunctionForHotReloading(current.type);
-        break;
-      case ClassComponent:
-        workInProgress.type = resolveClassForHotReloading(current.type);
-        break;
-      case ForwardRef:
-        workInProgress.type = resolveForwardRefForHotReloading(current.type);
-        break;
-      default:
-        break;
-    }
   }
 
   return workInProgress;

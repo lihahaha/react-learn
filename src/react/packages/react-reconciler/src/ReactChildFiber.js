@@ -265,6 +265,11 @@ function warnOnFunctionType() {
 // to be able to optimize each path individually by branching early. This needs
 // a compiler or we can do it manually. Helpers that don't need this branching
 // live outside of this function.
+/**
+ * ChildReconciler 接收的参数：shouldTrackSideEffects 标识, 是否为每个 Fiber 对象添加 effectTag
+ * true 添加 false 不添加
+ * 对于初始渲染来说, 只需要在内存中构建DOM树，构建完成后把根组件插入页面即可，只有根组件需要添加, 其他元素不需要添加, 防止过多的 DOM 操作
+ */
 function ChildReconciler(shouldTrackSideEffects) {
   function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {
     if (!shouldTrackSideEffects) {
@@ -776,37 +781,14 @@ function ChildReconciler(shouldTrackSideEffects) {
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
-    newChildren: Array<*>,
+    newChildren: Array<*>,// 子级 vdom 数组
     expirationTime: ExpirationTime,
   ): Fiber | null {
-    // This algorithm can't optimize by searching from both ends since we
-    // don't have backpointers on fibers. I'm trying to see how far we can get
-    // with that model. If it ends up not being worth the tradeoffs, we can
-    // add it later.
-
-    // Even with a two ended optimization, we'd want to optimize for the case
-    // where there are few changes and brute force the comparison instead of
-    // going for the Map. It'd like to explore hitting that path first in
-    // forward-only mode and only go for the Map once we notice that we need
-    // lots of look ahead. This doesn't handle reversal as well as two ended
-    // search but that's unusual. Besides, for the two ended optimization to
-    // work on Iterables, we'd need to copy the whole set.
-
-    // In this first iteration, we'll just live with hitting the bad case
-    // (adding everything to a Map) in for every insert/move.
-
-    // If you change this code, also update reconcileChildrenIterator() which
-    // uses the same algorithm.
-
-    if (__DEV__) {
-      // First, validate keys.
-      let knownKeys = null;
-      for (let i = 0; i < newChildren.length; i++) {
-        const child = newChildren[i];
-        knownKeys = warnOnInvalidKey(child, knownKeys);
-      }
-    }
-
+    /**
+     * 存储第一个子节点 Fiber 对象
+     * 方法返回的也是第一个子节点 Fiber 对象
+     * 因为其他子节点 Fiber 对象都存储在上一个子 Fiber 节点对象的 sibling 属性中
+     */
     let resultingFirstChild: Fiber | null = null;
     let previousNewFiber: Fiber | null = null;
 
@@ -1150,15 +1132,16 @@ function ChildReconciler(shouldTrackSideEffects) {
     created.return = returnFiber;
     return created;
   }
-
+  // 处理子元素是单个对象的情况
   function reconcileSingleElement(
-    returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
-    element: ReactElement,
+    returnFiber: Fiber, // 父 Fiber 对象
+    currentFirstChild: Fiber | null, // 备份子 fiber
+    element: ReactElement, // 子 vdom 对象
     expirationTime: ExpirationTime,
   ): Fiber {
     const key = element.key;
     let child = currentFirstChild;
+    // 初始渲染 currentFirstChild 为 null
     while (child !== null) {
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
@@ -1169,10 +1152,6 @@ function ChildReconciler(shouldTrackSideEffects) {
               deleteRemainingChildren(returnFiber, child.sibling);
               const existing = useFiber(child, element.props.children);
               existing.return = returnFiber;
-              if (__DEV__) {
-                existing._debugSource = element._source;
-                existing._debugOwner = element._owner;
-              }
               return existing;
             }
             break;
@@ -1225,7 +1204,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       }
       child = child.sibling;
     }
-
+    // 查看子 vdom 对象是否表示 fragment
     if (element.type === REACT_FRAGMENT_TYPE) {
       const created = createFiberFromFragment(
         element.props.children,
@@ -1236,14 +1215,20 @@ function ChildReconciler(shouldTrackSideEffects) {
       created.return = returnFiber;
       return created;
     } else {
+      // 根据 React Element 创建 Fiber 对象
+      // 返回创建好的 Fiber 对象
       const created = createFiberFromElement(
         element,
+        // 用来表示当前组件下的所有子组件要用处于何种渲染模式
+        // 文件位置: ./ReactTypeOfMode.js
+        // 0    同步渲染模式
+        // 100  异步渲染模式
         returnFiber.mode,
         expirationTime,
       );
-      created.ref = coerceRef(returnFiber, currentFirstChild, element);
-      created.return = returnFiber;
-      return created;
+      created.ref = coerceRef(returnFiber, currentFirstChild, element);// 添加 ref 属性 { current: DOM }
+      created.return = returnFiber;// 添加父级 Fiber 对象
+      return created;// 返回创建好的子 Fiber
     }
   }
 
@@ -1291,35 +1276,37 @@ function ChildReconciler(shouldTrackSideEffects) {
   // itself. They will be added to the side-effect list as we pass through the
   // children and the parent.
   function reconcileChildFibers(
-    returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
-    newChild: any,
-    expirationTime: ExpirationTime,
+    returnFiber: Fiber, // 父 Fiber 对象
+    currentFirstChild: Fiber | null, // 旧的第一个子 Fiber 初始渲染 null
+    newChild: any, // 新的子 vdom 对象
+    expirationTime: ExpirationTime, // 初始渲染 整型最大值 代表同步任务
   ): Fiber | null {
-    // This function is not recursive.
-    // If the top level item is an array, we treat it as a set of children,
-    // not as a fragment. Nested arrays on the other hand will be treated as
-    // fragment nodes. Recursion happens at the normal flow.
-
-    // Handle top level unkeyed fragments as if they were arrays.
-    // This leads to an ambiguity between <>{[...]}</> and <>...</>.
-    // We treat the ambiguous cases above the same.
+    // 这是入口方法, 根据 newChild 类型进行对应处理
+    // 判断新的子 vdom 是否为占位组件 比如 <></>
+    // false
     const isUnkeyedTopLevelFragment =
       typeof newChild === 'object' &&
       newChild !== null &&
       newChild.type === REACT_FRAGMENT_TYPE &&
       newChild.key === null;
+    // 如果 newChild 为占位符, 使用 占位符组件的子元素作为 newChild
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }
 
-    // Handle object types
+    // 检测 newChild 是否为对象类型
     const isObject = typeof newChild === 'object' && newChild !== null;
-
+    // newChild 是单个对象的情况
     if (isObject) {
+      // 匹配子元素的类型
       switch (newChild.$$typeof) {
+        // 子元素为 ReactElement
         case REACT_ELEMENT_TYPE:
+          // 为 Fiber 对象设置 effectTag 属性
+          // 返回创建好的子 Fiber
           return placeSingleChild(
+             // 处理单个 React Element 的情况
+            // 内部会调用其他方法创建对应的 Fiber 对象
             reconcileSingleElement(
               returnFiber,
               currentFirstChild,
@@ -1338,19 +1325,20 @@ function ChildReconciler(shouldTrackSideEffects) {
           );
       }
     }
-
+    // 处理 children 为文本和数值的情况
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(
           returnFiber,
           currentFirstChild,
-          '' + newChild,
+          '' + newChild, // 如果 newChild 是数值, 转换为字符串
           expirationTime,
         ),
       );
     }
-
+    // children 是数组的情况
     if (isArray(newChild)) {
+      // 返回创建好的子 Fiber
       return reconcileChildrenArray(
         returnFiber,
         currentFirstChild,
@@ -1358,7 +1346,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         expirationTime,
       );
     }
-
+    // 针对的是那些不是Array类型，但是有迭代器，能遍历的情况，正常代码不会这样，可以忽略
     if (getIteratorFn(newChild)) {
       return reconcileChildrenIterator(
         returnFiber,
@@ -1371,12 +1359,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     if (isObject) {
       throwOnInvalidObjectType(returnFiber, newChild);
     }
-
-    if (__DEV__) {
-      if (typeof newChild === 'function') {
-        warnOnFunctionType();
-      }
-    }
+    // 忽略
     if (typeof newChild === 'undefined' && !isUnkeyedTopLevelFragment) {
       // If the new child is undefined, and the return fiber is a composite
       // component, throw an error. If Fiber return types are disabled,
