@@ -790,12 +790,13 @@ function ChildReconciler(shouldTrackSideEffects) {
      * 因为其他子节点 Fiber 对象都存储在上一个子 Fiber 节点对象的 sibling 属性中
      */
     let resultingFirstChild: Fiber | null = null;
-    let previousNewFiber: Fiber | null = null;
+    let previousNewFiber: Fiber | null = null; // 上一次创建的 Fiber 对象
 
-    let oldFiber = currentFirstChild;
+    let oldFiber = currentFirstChild; // 初始渲染没有旧的子级 所以为 null
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    // 初始渲染 oldFiber 为 null 循环不执行
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -840,40 +841,47 @@ function ChildReconciler(shouldTrackSideEffects) {
       previousNewFiber = newFiber;
       oldFiber = nextOldFiber;
     }
-
+    // 初始渲染不执行
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
-
+    // oldFiber 为空 说明是初始渲染
     if (oldFiber === null) {
-      // If we don't have any more existing children we can choose a fast path
-      // since the rest will all be insertions.
+      // 遍历子 vdom 对象
       for (; newIdx < newChildren.length; newIdx++) {
+        // 创建子 vdom 对应的 fiber 对象
         const newFiber = createChild(
           returnFiber,
           newChildren[newIdx],
           expirationTime,
         );
+        // 如果 newFiber 为 null,进入下次循环
         if (newFiber === null) {
           continue;
         }
+        // 初始渲染时只为 newFiber 添加了 index 属性,
+        // 其他事没干. lastPlacedIndex 被原封不动的返回了
         lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        // 为当前节点设置下一个兄弟节点
         if (previousNewFiber === null) {
-          // TODO: Move out of the loop. This only happens for the first run.
+          // 存储第一个子 Fiber 发生在第一次循环时
           resultingFirstChild = newFiber;
         } else {
+          // 为节点设置下一个兄弟 Fiber
           previousNewFiber.sibling = newFiber;
         }
+        // 在循环的过程中更新上一个创建的Fiber 对象
         previousNewFiber = newFiber;
       }
+      // 返回创建好的子 Fiber
+      // 其他 Fiber 都作为 sibling 存在
       return resultingFirstChild;
     }
-
+    // 初始渲染后面的都不执行
     // Add all children to a key map for quick lookups.
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
-
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
       const newFiber = updateFromMap(

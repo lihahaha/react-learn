@@ -998,8 +998,6 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   // nextState => App
   // 初始渲染时为 false
   if (nextChildren === prevChildren) {
-    // If the state is the same as before, that's a bailout because we had
-    // no work that expires at this time.
     resetHydrationState();
     return bailoutOnAlreadyFinishedWork(
       current,
@@ -1012,10 +1010,6 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   // 客户端渲染走 else
   // 构建子节点 fiber 对象
   if (root.hydrate && enterHydrationState(workInProgress)) {
-    // If we don't have any current children this might be the first pass.
-    // We always try to hydrate. If this isn't a hydration pass there won't
-    // be any children to hydrate which is effectively the same thing as
-    // not hydrating.
 
     let child = mountChildFibers(
       workInProgress,
@@ -1027,12 +1021,6 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
 
     let node = child;
     while (node) {
-      // Mark each child as hydrating. This is a fast path to know whether this
-      // tree is part of a hydrating tree. This is used to determine if a child
-      // node has fully mounted yet, and for scheduling event replaying.
-      // Conceptually this is similar to Placement in that a new subtree is
-      // inserted into the React tree here. It just happens to not need DOM
-      // mutations because it already exists.
       node.effectTag = (node.effectTag & ~Placement) | Hydrating;
       node = node.sibling;
     }
@@ -3082,14 +3070,8 @@ function beginWork(
   } else {
     didReceiveUpdate = false;
   }
-
-  // Before entering the begin phase, clear pending update priority.
-  // TODO: This assumes that we're about to evaluate the component and process
-  // the update queue. However, there's an exception: SimpleMemoComponent
-  // sometimes bails out later in the begin phase. This indicates that we should
-  // move this assignment out of the common path and into each branch.
-  workInProgress.expirationTime = NoWork;
-
+  workInProgress.expirationTime = NoWork; // NoWork 常量 值为0 清空过期时间
+  // 根据当前 Fiber 的类型决定如何构建起子级 Fiber 对象
   switch (workInProgress.tag) {
     // 函数组件在第一次被渲染时使用， 2
     case IndeterminateComponent: {
@@ -3201,20 +3183,6 @@ function beginWork(
       const unresolvedProps = workInProgress.pendingProps;
       // Resolve outer props first, then resolve inner props.
       let resolvedProps = resolveDefaultProps(type, unresolvedProps);
-      if (__DEV__) {
-        if (workInProgress.type !== workInProgress.elementType) {
-          const outerPropTypes = type.propTypes;
-          if (outerPropTypes) {
-            checkPropTypes(
-              outerPropTypes,
-              resolvedProps, // Resolved for outer only
-              'prop',
-              getComponentName(type),
-              getCurrentFiberStackInDev,
-            );
-          }
-        }
-      }
       resolvedProps = resolveDefaultProps(type.type, resolvedProps);
       return updateMemoComponent(
         current,
