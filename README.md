@@ -9,6 +9,9 @@
 2. 解压 src 下的 react（v16.13.1） 压缩包，源码中有些配置需要修改，压缩包里我已经修改完，你只需要直接解压即可。
 3. 在根目录下启动： npm start
 
+## 笔记文档
+1. [render.md](./README/ReactDom/1.render.md);
+
 
 
 ##其他修改
