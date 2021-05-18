@@ -11,6 +11,14 @@
 
 ## 笔记文档
 1. [render.md](./README/ReactDom/1.render.md);
+2. [render.md](./README/ReactDom/2.updateContainer.md);
+3. [render.md](./README/ReactDom/3.expirationTime.md);
+4. [render.md](./README/ReactDom/4.setState&forceUpdate.md);
+5. [render.md](./README/ReactDom/5.scheduleWork.md);
+6. [render.md](./README/ReactDom/6.performSyncWorkOnRoot.md);
+7. [render.md](./README/ReactDom/7.workLoopSync.md);
+8. [render.md](./README/ReactDom/8.compleUnitOfWork.md);
+9. [render.md](./README/ReactDom/9.commit.md);
 
 
 
