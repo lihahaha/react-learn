@@ -426,21 +426,17 @@ export function appendChildToContainer(
   child: Instance | TextInstance,
 ): void {
   let parentNode;
+  // 监测 container 是否注释节点
   if (container.nodeType === COMMENT_NODE) {
+    // 获取父级的父级
     parentNode = (container.parentNode: any);
+    // 将子级节点插入到注释节点的前面
     parentNode.insertBefore(child, container);
   } else {
+    // 直接将 child 插入到父级中
     parentNode = container;
     parentNode.appendChild(child);
   }
-  // This container might be used for a portal.
-  // If something inside a portal is clicked, that click should bubble
-  // through the React tree. However, on Mobile Safari the click would
-  // never bubble through the *DOM* tree unless an ancestor with onclick
-  // event exists. So we wouldn't see it and dispatch it.
-  // This is why we ensure that non React root containers have inline onclick
-  // defined.
-  // https://github.com/facebook/react/issues/11918
   const reactRootContainer = container._reactRootContainer;
   if (
     (reactRootContainer === null || reactRootContainer === undefined) &&
@@ -464,9 +460,12 @@ export function insertInContainerBefore(
   child: Instance | TextInstance,
   beforeChild: Instance | TextInstance | SuspenseInstance,
 ): void {
+  // 如果父容器是注释节点
   if (container.nodeType === COMMENT_NODE) {
+    // 找到注释节点的父级节点 因为注释节点没法调用 insertBefore
     (container.parentNode: any).insertBefore(child, beforeChild);
   } else {
+    // 将 child 插入到 beforeChild 的前面
     container.insertBefore(child, beforeChild);
   }
 }

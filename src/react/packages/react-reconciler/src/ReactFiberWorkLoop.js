@@ -1092,8 +1092,10 @@ function performSyncWorkOnRoot(root) {
 }
 
 function finishSyncRender(root) {
-  // Set this to null to indicate there's no in-progress render.
+  // 销毁 workInProgress Fiber 树
+  // 因为待提交 Fiber 对象已经被存储在了 root.finishedWork 中
   workInProgressRoot = null;
+  // 进入 commit 阶段
   commitRoot(root);
 }
 
@@ -1765,7 +1767,10 @@ function resetChildExpirationTime(completedWork: Fiber) {
 }
 
 function commitRoot(root) {
+  // 获取任务优先级 97 => 普通优先级
   const renderPriorityLevel = getCurrentPriorityLevel();
+  // 使用最高优先级执行当前任务, 因为 commit 阶段不可以被打断
+  // ImmediatePriority, 优先级为 99, 最高优先级
   runWithPriority(
     ImmediatePriority,
     commitRootImpl.bind(null, root, renderPriorityLevel),
@@ -1789,20 +1794,17 @@ function commitRootImpl(root, renderPriorityLevel) {
     (executionContext & (RenderContext | CommitContext)) === NoContext,
     'Should not already be working.',
   );
-
+  // 获取待提交 Fiber 对象 rootFiber
   const finishedWork = root.finishedWork;
   const expirationTime = root.finishedExpirationTime;
+  // 如果没有任务要执行
   if (finishedWork === null) {
+    // 阻止程序继续向下执行
     return null;
   }
+  // 重置为默认值
   root.finishedWork = null;
   root.finishedExpirationTime = NoWork;
-
-  invariant(
-    finishedWork !== root.current,
-    'Cannot commit the same tree as before. This error is likely caused by ' +
-      'a bug in React. Please file an issue.',
-  );
 
   // commitRoot never returns a continuation; it always finishes synchronously.
   // So we can clear these now to allow a new callback to be scheduled.
@@ -1861,25 +1863,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // Reset this to null before calling lifecycles
     ReactCurrentOwner.current = null;
 
-    // The commit phase is broken into several sub-phases. We do a separate pass
-    // of the effect list for each phase: all mutation effects come before all
-    // layout effects, and so on.
-
-    // The first phase a "before mutation" phase. We use this phase to read the
-    // state of the host tree right before we mutate it. This is where
-    // getSnapshotBeforeUpdate is called.
     startCommitSnapshotEffectsTimer();
     prepareForCommit(root.containerInfo);
-    nextEffect = firstEffect;
+    nextEffect = firstEffect; // commit 第一个子阶段
+    // 处理类组件的 getSnapShotBeforeUpdate 生命周期函数
     do {
       if (__DEV__) {
-        invokeGuardedCallback(null, commitBeforeMutationEffects, null);
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
       } else {
         try {
           commitBeforeMutationEffects();
@@ -1900,22 +1889,10 @@ function commitRootImpl(root, renderPriorityLevel) {
 
     // The next phase is the mutation phase, where we mutate the host tree.
     startCommitHostEffectsTimer();
+    // commit 第二个子阶段
     nextEffect = firstEffect;
     do {
       if (__DEV__) {
-        invokeGuardedCallback(
-          null,
-          commitMutationEffects,
-          null,
-          root,
-          renderPriorityLevel,
-        );
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
       } else {
         try {
           commitMutationEffects(root, renderPriorityLevel);
@@ -1939,22 +1916,10 @@ function commitRootImpl(root, renderPriorityLevel) {
     // the host tree after it's been mutated. The idiomatic use case for this is
     // layout, but class component lifecycles also fire here for legacy reasons.
     startCommitLifeCyclesTimer();
+    // commit 第三个子阶段
     nextEffect = firstEffect;
     do {
       if (__DEV__) {
-        invokeGuardedCallback(
-          null,
-          commitLayoutEffects,
-          null,
-          root,
-          expirationTime,
-        );
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
       } else {
         try {
           commitLayoutEffects(root, expirationTime);
@@ -1966,7 +1931,7 @@ function commitRootImpl(root, renderPriorityLevel) {
       }
     } while (nextEffect !== null);
     stopCommitLifeCyclesTimer();
-
+    // 重置 nextEffect
     nextEffect = null;
 
     // Tell Scheduler to yield at the end of the frame, so the browser has an
@@ -2088,19 +2053,33 @@ function commitRootImpl(root, renderPriorityLevel) {
   flushSyncCallbackQueue();
   return null;
 }
-
+// commit 阶段的第一个子阶段
+// 调用类组件的 getSnapshotBeforeUpdate 生命周期函数
 function commitBeforeMutationEffects() {
+  // 循环 effect 链
   while (nextEffect !== null) {
-    const effectTag = nextEffect.effectTag;
-    if ((effectTag & Snapshot) !== NoEffect) {
-      setCurrentDebugFiberInDEV(nextEffect);
-      recordEffect();
+    // nextEffect 是 effect 链上从 firstEffect 到 lastEffect
+    // 的每一个需要commit的 fiber 对象
 
-      const current = nextEffect.alternate;
+    // 初始化渲染第一个 nextEffect 为 App 组件
+    // effectTag => 3
+    const effectTag = nextEffect.effectTag;
+    // 如果 fiber 对象中里有 Snapshot 这个 effectTag 的话
+    // Snapshot 和更新有关系 初始化渲染 不执行
+    if ((effectTag & Snapshot) !== NoEffect) {
+      setCurrentDebugFiberInDEV(nextEffect); // 开发环境执行 忽略
+      recordEffect(); // 计 effect 的数 忽略
+
+      const current = nextEffect.alternate; // 获取当前 fiber 节点
+      // 当 nextEffect 上有 Snapshot 这个 effectTag 时
+      // 执行以下方法, 主要是类组件调用 getSnapshotBeforeUpdate 生命周期函数
       commitBeforeMutationEffectOnFiber(current, nextEffect);
 
-      resetCurrentDebugFiberInDEV();
+      resetCurrentDebugFiberInDEV(); // 开发环境执行 忽略
     }
+    // 调度 useEffect
+    // 初始化渲染 目前没有 不执行
+    // false
     if ((effectTag & Passive) !== NoEffect) {
       // If there are passive effects, schedule a callback to flush at
       // the earliest opportunity.
@@ -2115,18 +2094,21 @@ function commitBeforeMutationEffects() {
     nextEffect = nextEffect.nextEffect;
   }
 }
-
+// commit 阶段的第二个子阶段
+// 根据 effectTag 执行 DOM 操作
 function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
-  // TODO: Should probably move the bulk of this function to commitWork.
+  // 循环 effect 链
   while (nextEffect !== null) {
-    setCurrentDebugFiberInDEV(nextEffect);
-
+    setCurrentDebugFiberInDEV(nextEffect); // 开发
+    // 获取 effectTag
+    // 初始渲染第一次循环为 App 组件
+    // 即将根组件及内部所有内容一次性添加到页面中
     const effectTag = nextEffect.effectTag;
-
+    // 如果有文本节点, 将 value 置为''
     if (effectTag & ContentReset) {
       commitResetTextContent(nextEffect);
     }
-
+    // 更新 ref
     if (effectTag & Ref) {
       const current = nextEffect.alternate;
       if (current !== null) {
@@ -2134,27 +2116,25 @@ function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
       }
     }
 
-    // The following switch statement is only concerned about placement,
-    // updates, and deletions. To avoid needing to add a case for every possible
-    // bitmap value, we remove the secondary effects from the effect tag and
-    // switch on that value.
+    // 根据 effectTag 分别处理
     let primaryEffectTag =
       effectTag & (Placement | Update | Deletion | Hydrating);
+    // 匹配 effectTag
+    // 初始渲染 primaryEffectTag 为 2 匹配到 Placement
     switch (primaryEffectTag) {
+      // 针对该节点及子节点进行插入操作
       case Placement: {
         commitPlacement(nextEffect);
-        // Clear the "placement" from effect tag so that we know that this is
-        // inserted, before any life-cycles like componentDidMount gets called.
-        // TODO: findDOMNode doesn't rely on this any more but isMounted does
-        // and isMounted is deprecated anyway so we should be able to kill this.
+        // effectTag 从 3 变为 1
+        // 从 effect 标签中清除 "placement" 重置 effectTag 值
+        // 以便我们知道在调用诸如componentDidMount之类的任何生命周期之前已将其插入
         nextEffect.effectTag &= ~Placement;
         break;
       }
+      // 插入并更新 DOM
       case PlacementAndUpdate: {
-        // Placement
+        // 插入
         commitPlacement(nextEffect);
-        // Clear the "placement" from effect tag so that we know that this is
-        // inserted, before any life-cycles like componentDidMount gets called.
         nextEffect.effectTag &= ~Placement;
 
         // Update
@@ -2162,10 +2142,12 @@ function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
         commitWork(current, nextEffect);
         break;
       }
+      // 服务端渲染
       case Hydrating: {
         nextEffect.effectTag &= ~Hydrating;
         break;
       }
+      // 服务端渲染
       case HydratingAndUpdate: {
         nextEffect.effectTag &= ~Hydrating;
 
@@ -2174,11 +2156,13 @@ function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
         commitWork(current, nextEffect);
         break;
       }
+      // 更新 DOM
       case Update: {
         const current = nextEffect.alternate;
         commitWork(current, nextEffect);
         break;
       }
+      // 删除 DOM
       case Deletion: {
         commitDeletion(root, nextEffect, renderPriorityLevel);
         break;
@@ -2192,7 +2176,7 @@ function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
     nextEffect = nextEffect.nextEffect;
   }
 }
-
+// commit 阶段的第三个子阶段
 function commitLayoutEffects(
   root: FiberRoot,
   committedExpirationTime: ExpirationTime,
@@ -2200,12 +2184,16 @@ function commitLayoutEffects(
   // TODO: Should probably move the bulk of this function to commitWork.
   while (nextEffect !== null) {
     setCurrentDebugFiberInDEV(nextEffect);
-
+    // 此时 effectTag 已经被重置为 1, 表示 DOM 操作已经完成
     const effectTag = nextEffect.effectTag;
-
+    // 调用生命周期函数和钩子函数
+    // 前提是类组件中调用了生命周期函数
+    // 或者函数组件中调用了 useEffect
     if (effectTag & (Update | Callback)) {
       recordEffect();
       const current = nextEffect.alternate;
+      // 类组件处理生命周期函数
+      // 函数组件处理钩子函数
       commitLayoutEffectOnFiber(
         root,
         current,
@@ -2213,13 +2201,15 @@ function commitLayoutEffects(
         committedExpirationTime,
       );
     }
-
+    // 赋值ref
+    // false
     if (effectTag & Ref) {
       recordEffect();
       commitAttachRef(nextEffect);
     }
 
     resetCurrentDebugFiberInDEV();
+    // 更新循环条件
     nextEffect = nextEffect.nextEffect;
   }
 }
