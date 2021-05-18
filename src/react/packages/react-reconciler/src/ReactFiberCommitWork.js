@@ -387,10 +387,6 @@ function commitLifeCycles(
     case ForwardRef:
     case SimpleMemoComponent:
     case Block: {
-      // At this point layout effects have already been destroyed (during mutation phase).
-      // This is done to prevent sibling component effects from interfering with each other,
-      // e.g. a destroy function in one component should never override a ref set
-      // by a create function in another component during the same commit.
       commitHookEffectListMount(HookLayout | HookHasEffect, finishedWork);
 
       if (runAllPassiveEffectDestroysBeforeCreates) {
